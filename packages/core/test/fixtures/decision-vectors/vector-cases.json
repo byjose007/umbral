@@ -1,0 +1,108 @@
+[
+  {
+    "id": "tc-001-grant-schedule",
+    "description": "Valid credential within allowed schedule window",
+    "input": {
+      "credentialHash": "hash-user-1",
+      "doorId": "door-101",
+      "readerId": "reader-in",
+      "at": "2026-07-23T10:00:00.000Z",
+      "presentedPin": null
+    },
+    "expected": {
+      "kind": "granted",
+      "reasonCode": "SCHEDULE_MATCH"
+    }
+  },
+  {
+    "id": "tc-002-deny-unknown",
+    "description": "Unknown credential hash not in access matrix",
+    "input": {
+      "credentialHash": "hash-unknown-99",
+      "doorId": "door-101",
+      "readerId": "reader-in",
+      "at": "2026-07-23T10:00:00.000Z",
+      "presentedPin": null
+    },
+    "expected": {
+      "kind": "denied",
+      "reasonCode": "UNKNOWN_CREDENTIAL"
+    }
+  },
+  {
+    "id": "tc-003-deny-absence",
+    "description": "Credential denied due to active blocking absence",
+    "input": {
+      "credentialHash": "hash-vacation-user",
+      "doorId": "door-101",
+      "readerId": "reader-in",
+      "at": "2026-07-23T10:00:00.000Z",
+      "presentedPin": null
+    },
+    "expected": {
+      "kind": "denied",
+      "reasonCode": "ABSENCE_ACTIVE"
+    }
+  },
+  {
+    "id": "tc-004-deny-blocked",
+    "description": "Blocked credential denied",
+    "input": {
+      "credentialHash": "hash-blocked-user",
+      "doorId": "door-101",
+      "readerId": "reader-in",
+      "at": "2026-07-23T10:00:00.000Z",
+      "presentedPin": null
+    },
+    "expected": {
+      "kind": "denied",
+      "reasonCode": "CREDENTIAL_BLOCKED"
+    }
+  },
+  {
+    "id": "tc-005-deny-expired",
+    "description": "Expired credential validUntil date",
+    "input": {
+      "credentialHash": "hash-expired-user",
+      "doorId": "door-101",
+      "readerId": "reader-in",
+      "at": "2026-07-23T10:00:00.000Z",
+      "presentedPin": null
+    },
+    "expected": {
+      "kind": "denied",
+      "reasonCode": "CREDENTIAL_EXPIRED"
+    }
+  },
+  {
+    "id": "tc-006-deny-out-of-schedule",
+    "description": "Credential presented outside schedule window (night time)",
+    "input": {
+      "credentialHash": "hash-user-1",
+      "doorId": "door-101",
+      "readerId": "reader-in",
+      "at": "2026-07-23T23:30:00.000Z",
+      "presentedPin": null
+    },
+    "expected": {
+      "kind": "denied",
+      "reasonCode": "OUT_OF_SCHEDULE"
+    }
+  },
+  {
+    "id": "tc-007-grant-duress-pin",
+    "description": "Duress PIN presented grants access physically with silent alarm",
+    "input": {
+      "credentialHash": "hash-duress-user",
+      "doorId": "door-101",
+      "readerId": "reader-in",
+      "at": "2026-07-23T10:00:00.000Z",
+      "presentedPin": "9999"
+    },
+    "expected": {
+      "kind": "granted",
+      "reasonCode": "DURESS_MATCH",
+      "silentAlarm": "duress"
+    }
+  }
+]

@@ -1,0 +1,80 @@
+name: umbral
+
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg17
+    container_name: umbral-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: umbral
+      POSTGRES_USER: umbral
+      POSTGRES_PASSWORD: umbral_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umbral -d umbral"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: umbral-valkey
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  emqx:
+    image: emqx/emqx:5.8.6
+    container_name: umbral-emqx
+    restart: unless-stopped
+    ports:
+      - "1883:1883"     # MQTT TCP
+      - "8883:8883"     # MQTT mTLS
+      - "8083:8083"     # MQTT WebSocket
+      - "18083:18083"   # Dashboard Admin
+    environment:
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: "admin"
+    volumes:
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
+    healthcheck:
+      test: ["CMD", "emqx", "ctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:RELEASE.2025-02-18T16-25-55Z
+    container_name: umbral-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"     # API S3
+      - "9001:9001"     # Console Web
+    environment:
+      MINIO_ROOT_USER: umbral
+      MINIO_ROOT_PASSWORD: umbral_minio_password
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  valkey_data:
+  emqx_data:
+  emqx_log:
+  minio_data:

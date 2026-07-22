@@ -1,0 +1,9 @@
+{
+  "name": "umbral",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "infra": "docker compose up -d",
+    "infra:down": "docker compose down"
+  }
+}

@@ -31,6 +31,9 @@ importers:
       '@nestjs/platform-fastify':
         specifier: ^11.1.28
         version: 11.1.28(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@11.1.28)
+      '@umbral/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       argon2:
         specifier: ^0.45.0
         version: 0.45.0
@@ -270,7 +273,7 @@ importers:
     devDependencies:
       '@angular-devkit/build-angular':
         specifier: 20.3.28
-        version: 20.3.28(754e6620ea24fa0bff1de1f6c2fe72ce)
+        version: 20.3.28(7f970f19f1250e50b7a932d7656e71a7)
       '@angular-eslint/builder':
         specifier: 20.7.0
         version: 20.7.0(chokidar@4.0.3)(eslint@9.39.5(jiti@1.21.7)(supports-color@8.1.1))(typescript@5.9.3)
@@ -348,6 +351,13 @@ importers:
         version: 5.9.3
 
   packages/core:
+    dependencies:
+      neverthrow:
+        specifier: ^8.2.0
+        version: 8.2.0
+      rxjs:
+        specifier: ^7.8.1
+        version: 7.8.2
     devDependencies:
       typescript:
         specifier: ^5.7.0
@@ -9888,7 +9898,7 @@ snapshots:
     transitivePeerDependencies:
       - chokidar
 
-  '@angular-devkit/build-angular@20.3.28(754e6620ea24fa0bff1de1f6c2fe72ce)':
+  '@angular-devkit/build-angular@20.3.28(7f970f19f1250e50b7a932d7656e71a7)':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@angular-devkit/architect': 0.2003.28(chokidar@4.0.3)

@@ -103,6 +103,15 @@ export * from './domain/notifications/notification.entity.js';
 export * from './domain/notifications/template-engine.js';
 export * from './domain/notifications/channel-dispatcher.port.js';
 
+// Domain — Compliance (LOPDP)
+export * from './domain/compliance/ids.js';
+export * from './domain/compliance/errors.js';
+export * from './domain/compliance/retention-policy.entity.js';
+export * from './domain/compliance/pii-audit.entity.js';
+export * from './domain/compliance/arco.service.js';
+export * from './domain/compliance/privacy-notice.entity.js';
+
+
 
 
 

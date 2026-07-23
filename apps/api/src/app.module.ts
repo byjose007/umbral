@@ -13,6 +13,7 @@ import { UserPassModule } from './modules/user-pass/user-pass.module';
 import { GuardPwaModule } from './modules/guard-pwa/guard-pwa.module';
 import { WorkflowModule } from './modules/workflow/workflow.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ComplianceModule } from './modules/compliance/compliance.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     GuardPwaModule,
     WorkflowModule,
     NotificationsModule,
+    ComplianceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

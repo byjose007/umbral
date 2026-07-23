@@ -57,6 +57,44 @@ export * from './domain/access-rights/access-level.entity.js';
 export * from './domain/access-rights/group.entity.js';
 export * from './domain/access-rights/person-group.entity.js';
 
+// Domain — Device Gateway
+export * from './domain/device-gateway/ids.js';
+export * from './domain/device-gateway/errors.js';
+export * from './domain/device-gateway/mqtt-topics.js';
+export * from './domain/device-gateway/device-gateway.port.js';
+
+// Domain — Events & Audit
+export * from './domain/events-audit/ids.js';
+export * from './domain/events-audit/errors.js';
+export * from './domain/events-audit/taxonomy.js';
+export * from './domain/events-audit/hash-chain.js';
+export * from './domain/events-audit/access-event.entity.js';
+export * from './domain/events-audit/chain-verifier.js';
+
+// Domain — Alerting
+export * from './domain/alerting/ids.js';
+export * from './domain/alerting/errors.js';
+export * from './domain/alerting/pseudonymizer.js';
+export * from './domain/alerting/alert-rule.entity.js';
+export * from './domain/alerting/alert.entity.js';
+
+// Domain — PWA Mobile (User Pass & Guard Console)
+export * from './domain/pwa-mobile/ids.js';
+export * from './domain/pwa-mobile/errors.js';
+export * from './domain/pwa-mobile/offline-qr-generator.js';
+export * from './domain/pwa-mobile/muster-roll.entity.js';
+
+// Domain — User Pass (User Mobile Pass PWA)
+export * from './domain/user-pass/ids.js';
+export * from './domain/user-pass/errors.js';
+export * from './domain/user-pass/user-pass-generator.js';
+export * from './domain/user-pass/visitor-pass.entity.js';
+
+
+
+
+
+
 
 
 

@@ -1,0 +1,27 @@
+/* UMBRAL User App — Global Styles */
+@import "@ionic/angular/css/core.css";
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/* Always use dark mode for the User Pass PWA */
+@import '@ionic/angular/css/palettes/dark.always.css';
+
+/* Inter font for premium typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+* {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+ion-content {
+  --background: #0f0f1a;
+}
+
+ion-app {
+  background: #0f0f1a;
+}

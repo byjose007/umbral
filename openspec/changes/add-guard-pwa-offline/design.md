@@ -1,29 +1,21 @@
 ## Context
 
-La PWA es el punto donde "funciona sin red" deja de ser un eslogan y se prueba. El
-diseño asume desconexión como caso normal, no como excepción.
+La PWA de guardia es el centro de control operativo y de emergencias en campo. Asume desconexión de red como el estado normal y esperado.
 
 ## Decisiones
 
-### D1 — Offline-first real, no "modo degradado"
+### D1 — Offline-First Real para Garitas y Patrullaje
+Service Worker + SQLite/IndexedDB guardan la CRL (lista de revocación) y la ocupación del sitio. La verificación de QR por cámara se ejecuta localmente mediante la clave pública ES256 sin llamar al servidor.
 
-Service Worker + SQLite local guardan la ACL relevante, la CRL y el estado de
-ocupación necesario para el muster. La verificación de QR es local por clave pública
-(ES256) — no consulta al servidor. Al reconectar, se sincroniza.
+### D2 — Muster Roll de Evacuación Derivado Offline (Emergencias)
+El conteo de ocupantes dentro del sitio se calcula del estado de ocupación/Anti-Passback sincronizado en la PWA del guardia. En un terremoto o incendio, el guardia genera el reporte de evacuación (Muster roll) en un clic sin red, listo para exportar a PDF/CSV o imprimir en el punto de encuentro.
 
-### D2 — El muster se deriva de datos que ya existen
+### D3 — Validación Manual & Contingencia en Garita
+Si falla un lector físico de $54 o se corta un cable de red, el guardia puede buscar al empleado por documento/foto en su PWA y autorizar la apertura de garita, quedando registrado en la auditoría.
 
-Quién está dentro ahora se calcula del estado de ocupación (entradas/salidas)
-sincronizado; el muster es una vista de eso, disponible sin red. No requiere ningún
-dato nuevo: es "gratis" a partir de anti-passback/ocupación.
-
-### D3 — Seudonimización coherente
-
-La PWA respeta la misma regla que el feed: por defecto seudonimiza; revelar
-identidad es acción auditada. En una evacuación, el muster puede requerir nombres:
-ese modo es un permiso explícito y auditado, no el estado por defecto.
+### D4 — Seudonimización LOPDP DP-06 por Defecto
+La consola del guardia muestra identidades seudonimizadas por defecto (`USR-XXXXXX`). Revelar nombre y cédula en emergencias es una acción explícita auditada.
 
 ## Non-goals
 
-- App nativa de tienda (la PWA/Capacitor cubre el MVP).
-- Lectura NFC en iOS sin entitlements (se decide en Fase 0; QR es el mínimo común).
+- Generación de pases para usuarios finales (cubierto en `add-user-pass-pwa`).

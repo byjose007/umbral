@@ -1,0 +1,31 @@
+// UMBRAL User App — Ionic theme variables
+// Dark-first design to match the mobile pass PWA aesthetic
+
+:root {
+  --ion-background-color: #0f0f1a;
+  --ion-background-color-rgb: 15, 15, 26;
+
+  --ion-text-color: #e2e8f0;
+  --ion-text-color-rgb: 226, 232, 240;
+
+  --ion-color-primary: #6366f1;
+  --ion-color-primary-rgb: 99, 102, 241;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-shade: #4f52c4;
+  --ion-color-primary-tint: #7c7ef5;
+
+  --ion-color-secondary: #8b5cf6;
+  --ion-color-secondary-rgb: 139, 92, 246;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-shade: #7048d6;
+  --ion-color-secondary-tint: #9f7cf8;
+
+  --ion-color-success: #10b981;
+  --ion-color-danger: #ef4444;
+  --ion-color-warning: #f59e0b;
+
+  --ion-font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+
+  --ion-safe-area-top: env(safe-area-inset-top);
+  --ion-safe-area-bottom: env(safe-area-inset-bottom);
+}

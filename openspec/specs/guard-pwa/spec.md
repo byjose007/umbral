@@ -1,4 +1,10 @@
-## ADDED Requirements
+# guard-pwa Specification
+
+## Purpose
+
+Proporcionar al guardia de seguridad en garita o patrullaje la capacidad operativa offline-first para verificar pases dinámicos mediante clave pública y CRL local, gestionar contingencias manuales con auditoría, generar reportes de evacuación Muster roll en emergencias, y atender alertas seudonimizadas bajo LOPDP DP-06.
+
+## Requirements
 
 ### Requirement: Verificación de QR sin conexión
 

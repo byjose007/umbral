@@ -83,12 +83,25 @@ export * from './domain/pwa-mobile/ids.js';
 export * from './domain/pwa-mobile/errors.js';
 export * from './domain/pwa-mobile/offline-qr-generator.js';
 export * from './domain/pwa-mobile/muster-roll.entity.js';
+export * from './domain/pwa-mobile/guard-pwa.entity.js';
 
 // Domain — User Pass (User Mobile Pass PWA)
 export * from './domain/user-pass/ids.js';
 export * from './domain/user-pass/errors.js';
 export * from './domain/user-pass/user-pass-generator.js';
 export * from './domain/user-pass/visitor-pass.entity.js';
+
+// Domain — Workflow (Access Request)
+export * from './domain/workflow/ids.js';
+export * from './domain/workflow/errors.js';
+export * from './domain/workflow/access-request.entity.js';
+export * from './domain/workflow/required-document-check.js';
+
+// Domain — Notifications
+export * from './domain/notifications/errors.js';
+export * from './domain/notifications/notification.entity.js';
+export * from './domain/notifications/template-engine.js';
+export * from './domain/notifications/channel-dispatcher.port.js';
 
 
 

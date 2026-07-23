@@ -30,7 +30,7 @@ export interface ScheduleWindow {
   endMinute: number; // 0..1439
 }
 
-export interface HolidayCalendar {
+export interface DecisionHolidayCalendar {
   date: string; // "YYYY-MM-DD"
   allowsAccess: boolean;
 }
@@ -47,7 +47,7 @@ export interface CompiledCredentialEntry {
   duressPin?: string | null;
   allowedDoorIds: DoorId[];
   schedulesByDoor: Record<string, ScheduleWindow[]>;
-  holidays?: HolidayCalendar[];
+  holidays?: DecisionHolidayCalendar[];
 }
 
 export interface CompiledAccessMatrix {

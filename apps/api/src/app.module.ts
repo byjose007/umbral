@@ -10,6 +10,9 @@ import { DeviceGatewayModule } from './modules/device-gateway/device-gateway.mod
 import { EventsAuditModule } from './modules/events-audit/events-audit.module';
 import { AlertingModule } from './modules/alerting/alerting.module';
 import { UserPassModule } from './modules/user-pass/user-pass.module';
+import { GuardPwaModule } from './modules/guard-pwa/guard-pwa.module';
+import { WorkflowModule } from './modules/workflow/workflow.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -22,6 +25,9 @@ import { UserPassModule } from './modules/user-pass/user-pass.module';
     EventsAuditModule,
     AlertingModule,
     UserPassModule,
+    GuardPwaModule,
+    WorkflowModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,5 +1,5 @@
 import { DoorId } from '../topology/ids.js';
-import { CompiledAccessMatrix, CompiledCredentialEntry, ScheduleWindow, HolidayCalendar } from './types.js';
+import { CompiledAccessMatrix, CompiledCredentialEntry, ScheduleWindow, DecisionHolidayCalendar } from './types.js';
 
 export interface UserAccessLevelInput {
   personId: string;
@@ -15,7 +15,7 @@ export interface UserAccessLevelInput {
     doorId: DoorId;
     windows: ScheduleWindow[];
   }[];
-  holidays?: HolidayCalendar[];
+  holidays?: DecisionHolidayCalendar[];
 }
 
 export interface CompileMatrixInput {

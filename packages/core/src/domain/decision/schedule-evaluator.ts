@@ -1,9 +1,9 @@
-import { ScheduleWindow, HolidayCalendar } from './types.js';
+import { ScheduleWindow, DecisionHolidayCalendar } from './types.js';
 
 export function isWithinSchedule(
   at: Date,
   windows: ScheduleWindow[] | undefined,
-  holidays: HolidayCalendar[] | undefined
+  holidays: DecisionHolidayCalendar[] | undefined
 ): boolean {
   // ISO date format YYYY-MM-DD
   const isoDate = at.toISOString().split('T')[0]!;

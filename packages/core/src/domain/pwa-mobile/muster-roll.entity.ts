@@ -70,4 +70,27 @@ export class MusterRoll {
       missingCount,
     };
   }
+
+  public exportToCsv(): string {
+    const header = 'PersonId,Pseudonym,FullName,ZoneId,Status';
+    const rows = this.props.occupants.map(
+      (o) => `${o.personId},${o.pseudonym},"${o.fullName || ''}",${o.zoneId},${o.status}`
+    );
+    return [header, ...rows].join('\n');
+  }
+
+  public exportToJson(): string {
+    return JSON.stringify(
+      {
+        sessionId: this.sessionId,
+        siteId: this.siteId,
+        initiatedBy: this.initiatedBy,
+        initiatedAt: this.initiatedAt.toISOString(),
+        headcount: this.getHeadcount(),
+        occupants: this.props.occupants,
+      },
+      null,
+      2
+    );
+  }
 }

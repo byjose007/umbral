@@ -1,27 +1,97 @@
-#container {
-  text-align: center;
-
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+.offline-badge {
+  font-size: 0.8rem;
+  margin-right: 8px;
 }
 
-#container strong {
-  font-size: 20px;
-  line-height: 26px;
+.demo-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
 }
 
-#container p {
-  font-size: 16px;
-  line-height: 22px;
+.scan-result-box {
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
 
-  color: #8c8c8c;
+  &.valid-pass {
+    background-color: #e6f9ed;
+    border-color: #2dd36f;
+    color: #0f5132;
+  }
 
-  margin: 0;
+  &.invalid-pass {
+    background-color: #fde8e8;
+    border-color: #eb445a;
+    color: #842029;
+  }
 }
 
-#container a {
-  text-decoration: none;
+.headcount-summary {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 16px;
+  gap: 12px;
+
+  .headcount-box {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    border-radius: 8px;
+    background: #f4f5f8;
+
+    .num {
+      display: block;
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+
+    .label {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    &.total {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+
+    &.evacuated {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    &.missing {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+  }
+}
+
+.export-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.export-preview {
+  background: #1e1e1e;
+  color: #4ade80;
+  padding: 12px;
+  border-radius: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: 0.8rem;
+}
+
+.audit-history {
+  background: #fffbeb;
+  border: 1px dashed #f59e0b;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+
+  ul {
+    padding-left: 18px;
+    margin-top: 6px;
+  }
 }

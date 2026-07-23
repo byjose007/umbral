@@ -63,3 +63,21 @@ export const musterSnapshots = pgTable(
     siteIdIdx: index('idx_muster_site_id').on(table.siteId),
   })
 );
+
+export const guardOverrideLogs = pgTable(
+  'guard_override_logs',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    guardPersonId: varchar('guard_person_id', { length: 36 }).notNull(),
+    targetPersonId: varchar('target_person_id', { length: 36 }),
+    targetDocument: varchar('target_document', { length: 64 }),
+    doorId: varchar('door_id', { length: 36 }).notNull(),
+    reason: varchar('reason', { length: 255 }).notNull(),
+    action: varchar('action', { length: 64 }).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    guardIdx: index('idx_guard_override_guard_person').on(table.guardPersonId),
+  })
+);
+

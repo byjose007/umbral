@@ -1,8 +1,9 @@
-import { createHash } from 'node:crypto';
+import { sha256Hex } from '../crypto-utils.js';
 
-export function pseudonymizePersonId(personId: string | null | undefined): string | null {
-  if (!personId) return null;
-  const hash = createHash('sha256').update(`UMBRAL_PSEUDO_SALT::${personId}`).digest('hex');
-  const shortCode = hash.substring(0, 6).toUpperCase();
-  return `USR-${shortCode}`;
+export function pseudonymize(personId: string, salt: string = 'umbral-salt-2026'): string {
+  const content = `PSEUDO::${salt}::PERSON=${personId}`;
+  const hash = sha256Hex(content).toUpperCase();
+  return `USR-${hash.substring(0, 6)}`;
 }
+
+export const pseudonymizePersonId = pseudonymize;

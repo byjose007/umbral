@@ -1,66 +1,61 @@
-import { createHmac } from 'node:crypto';
+import { hmacSha256Hex } from '../crypto-utils.js';
 
-export interface DynamicQRTokenResult {
-  token: string;
-  expiresInSec: number;
-  timeBucket: number;
+export interface OfflineQrTokenResult {
+  readonly token: string;
+  readonly mode: 'normal' | 'duress';
+  readonly validUntil: Date;
+  readonly expiresInSec: number;
 }
 
 export function generateOfflineDynamicQRToken(
   seedSecret: string,
   personId: string,
-  nowMs: number = Date.now(),
-  stepSec = 30
-): DynamicQRTokenResult {
-  const timeBucket = Math.floor(nowMs / 1000 / stepSec);
-  const secondsRemaining = stepSec - (Math.floor(nowMs / 1000) % stepSec);
+  at: Date | number = new Date(),
+  mode: 'normal' | 'duress' = 'normal',
+  validitySeconds = 30
+): OfflineQrTokenResult {
+  const atDate = typeof at === 'number' ? new Date(at) : at;
+  const nowMs = atDate.getTime();
+  const windowIndex = Math.floor(nowMs / (validitySeconds * 1000));
+  const validUntil = new Date((windowIndex + 1) * validitySeconds * 1000);
+  const expiresInSec = Math.max(0, Math.ceil((validUntil.getTime() - nowMs) / 1000));
 
-  const payload = `${personId}::${timeBucket}`;
-  const signature = createHmac('sha256', seedSecret).update(payload).digest('hex').substring(0, 16);
+  const payload = `OFFLINE-QR::MODE=${mode}::PERSON=${personId}::WIN=${windowIndex}`;
+  const hmac = hmacSha256Hex(seedSecret, payload).substring(0, 16);
 
-  const token = `UMBRAL-PASS-v1.${personId}.${timeBucket}.${signature}`;
+  const token = `UMBRAL-PASS-v1.${personId}.${windowIndex}.${mode}.${hmac}`;
 
   return {
     token,
-    expiresInSec: secondsRemaining,
-    timeBucket,
+    mode,
+    validUntil,
+    expiresInSec,
   };
 }
 
 export function verifyOfflineDynamicQRToken(
   token: string,
   seedSecret: string,
-  nowMs: number = Date.now(),
-  stepSec = 30,
-  allowedDriftBuckets = 1
+  at: Date | number = new Date(),
+  validitySeconds = 30
 ): boolean {
-  if (!token || !token.startsWith('UMBRAL-PASS-v1.')) {
-    return false;
-  }
+  if (!token || typeof token !== 'string') return false;
 
+  const atDate = typeof at === 'number' ? new Date(at) : at;
   const parts = token.split('.');
-  if (parts.length !== 4) return false;
 
-  const [, personId, tokenBucketStr, providedSignature] = parts;
-  const tokenBucket = parseInt(tokenBucketStr!, 10);
-  if (isNaN(tokenBucket)) return false;
+  if (parts.length === 5 && parts[0] === 'UMBRAL-PASS-v1') {
+    const [_, personId, winStr, modeStr, sig] = parts;
+    const windowIndex = parseInt(winStr, 10);
+    const mode = modeStr as 'normal' | 'duress';
 
-  const currentBucket = Math.floor(nowMs / 1000 / stepSec);
+    const currentWindowIndex = Math.floor(atDate.getTime() / (validitySeconds * 1000));
+    if (Math.abs(currentWindowIndex - windowIndex) > 1) return false;
 
-  // Check current bucket and drift tolerance (e.g. ±1 bucket for clock skew)
-  for (let offset = -allowedDriftBuckets; offset <= allowedDriftBuckets; offset++) {
-    const candidateBucket = currentBucket + offset;
-    if (candidateBucket === tokenBucket) {
-      const expectedPayload = `${personId}::${tokenBucket}`;
-      const expectedSignature = createHmac('sha256', seedSecret)
-        .update(expectedPayload)
-        .digest('hex')
-        .substring(0, 16);
+    const payload = `OFFLINE-QR::MODE=${mode}::PERSON=${personId}::WIN=${windowIndex}`;
+    const expectedHmac = hmacSha256Hex(seedSecret, payload).substring(0, 16);
 
-      if (providedSignature === expectedSignature) {
-        return true;
-      }
-    }
+    return sig === expectedHmac;
   }
 
   return false;

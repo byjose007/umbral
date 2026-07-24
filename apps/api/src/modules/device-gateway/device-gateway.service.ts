@@ -14,7 +14,7 @@ import {
 } from './dto/device-gateway.dto';
 import { v4 as uuidv4 } from './uuid';
 
-interface DeviceProvisioningInternal {
+export interface DeviceProvisioningInternal {
   id: string;
   controllerId: string;
   certificateThumbprint: string;
@@ -23,7 +23,7 @@ interface DeviceProvisioningInternal {
   revokedAt?: Date | null;
 }
 
-interface DeviceHealthInternal {
+export interface DeviceHealthInternal {
   controllerId: string;
   appliedMatrixVersion: number;
   firmwareVersion: string;

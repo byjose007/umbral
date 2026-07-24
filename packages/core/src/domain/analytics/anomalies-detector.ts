@@ -38,7 +38,7 @@ export class AnomalyDetector {
 
       for (let i = 0; i < sorted.length; i++) {
         const curr = sorted[i];
-        const isGranted = curr.eventType === 'access.granted' || curr.eventType === 'ACCESS_GRANTED';
+        const isGranted = curr.eventType === 'access.granted';
         if (!isGranted) continue;
 
         // 1. Check Orphaned Access (e.g. entry after entry without exit)

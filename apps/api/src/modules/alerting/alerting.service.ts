@@ -16,7 +16,7 @@ import {
 } from './dto/alerting.dto';
 import { v4 as uuidv4 } from './uuid';
 
-interface PiiAuditRecord {
+export interface PiiAuditRecord {
   id: string;
   alertId: string;
   operatorUser: string;
@@ -69,7 +69,7 @@ export class AlertingService {
       (r) => r.siteId === dto.siteId && r.eventType === dto.eventType
     );
 
-    const createdAlerts = [];
+    const createdAlerts: any[] = [];
 
     for (const rule of matchingRules) {
       // Deduplication check: active alert with same ruleId, siteId, doorId within dedupWindowSec

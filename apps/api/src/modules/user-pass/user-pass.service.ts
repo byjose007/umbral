@@ -32,7 +32,7 @@ interface SeedRecord {
   issuedAt: Date;
 }
 
-interface AccessHistoryEntry {
+export interface AccessHistoryEntry {
   id: string;
   personId: string;
   doorLabel: string;
@@ -42,7 +42,7 @@ interface AccessHistoryEntry {
   occurredAt: Date;
 }
 
-interface VisitorPassRecord {
+export interface VisitorPassRecord {
   id: string;
   issuerPersonId: string;
   visitorName: string;

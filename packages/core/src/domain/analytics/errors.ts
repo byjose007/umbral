@@ -1,13 +1,10 @@
-export class DomainError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = this.constructor.name;
-  }
-}
+import { DomainError } from '../topology/errors.js';
+export { DomainError };
 
 export class AnalyticsError extends DomainError {
   constructor(message: string) {
-    super(message);
+    super('ANALYTICS_ERROR', message);
+    this.name = 'AnalyticsError';
   }
 }
 

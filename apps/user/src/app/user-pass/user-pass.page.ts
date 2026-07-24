@@ -1,9 +1,8 @@
-import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   IonContent,
-  IonPage,
 } from '@ionic/angular/standalone';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -40,7 +39,8 @@ interface VisitorPassRecord {
 @Component({
   selector: 'app-user-pass',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonPage],
+  imports: [CommonModule, FormsModule, IonContent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ion-page>
       <ion-content [fullscreen]="true" [scrollY]="false">

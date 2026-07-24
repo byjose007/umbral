@@ -1,2 +1,3 @@
-import './zone-flags';
-import 'zone.js';
+/**
+ * Polyfills for Angular Zoneless application.
+ */

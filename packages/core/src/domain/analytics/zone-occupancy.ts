@@ -1,6 +1,6 @@
 import { AccessEvent } from '../events-audit/access-event.entity.js';
 
-export interface OccupantRecord {
+export interface ServerOccupantRecord {
   readonly personId: string;
   readonly siteId: string;
   readonly zoneId?: string;
@@ -12,7 +12,7 @@ export interface ZoneOccupancySummary {
   readonly siteId: string;
   readonly zoneId?: string;
   readonly currentCount: number;
-  readonly occupants: OccupantRecord[];
+  readonly occupants: ServerOccupantRecord[];
   readonly lastCalculatedAt: Date;
 }
 
@@ -21,7 +21,7 @@ export class ZoneOccupancyTracker {
    * Calculate current occupancy and occupants list from access events history.
    */
   public static calculateOccupancy(events: AccessEvent[], targetSiteId?: string): ZoneOccupancySummary {
-    const occupantsMap = new Map<string, OccupantRecord>();
+    const occupantsMap = new Map<string, ServerOccupantRecord>();
 
     // Process events chronologically
     const sortedEvents = [...events].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
@@ -30,14 +30,13 @@ export class ZoneOccupancyTracker {
       if (targetSiteId && ev.siteId !== targetSiteId) continue;
       if (!ev.personId) continue;
 
-      const isGranted = ev.eventType === 'access.granted' || ev.eventType === 'ACCESS_GRANTED';
+      const isGranted = ev.eventType === 'access.granted';
       if (!isGranted) continue;
 
       if (ev.direction === 'in') {
         occupantsMap.set(ev.personId, {
           personId: ev.personId,
           siteId: ev.siteId,
-          doorId: ev.doorId ?? undefined,
           enteredAt: ev.timestamp,
           lastDoorId: ev.doorId ?? undefined,
         });
@@ -63,7 +62,7 @@ export class ZoneOccupancyTracker {
     generatedAt: Date;
     totalInside: number;
     personIds: string[];
-    occupants: OccupantRecord[];
+    occupants: ServerOccupantRecord[];
   } {
     const summary = this.calculateOccupancy(events, siteId);
     return {

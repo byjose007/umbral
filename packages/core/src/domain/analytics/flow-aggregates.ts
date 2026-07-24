@@ -38,8 +38,8 @@ export class FlowAggregator {
         deniedCount: 0,
       };
 
-      const isGranted = event.eventType === 'access.granted' || event.eventType === 'ACCESS_GRANTED';
-      const isDenied = event.eventType === 'access.denied' || event.eventType === 'ACCESS_DENIED';
+      const isGranted = event.eventType === 'access.granted';
+      const isDenied = event.eventType === 'access.denied';
       const direction = event.direction;
 
       let totalEntries = existing.totalEntries;

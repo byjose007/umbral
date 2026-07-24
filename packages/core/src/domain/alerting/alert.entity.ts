@@ -35,7 +35,7 @@ export class Alert {
       return err(new AlertingError('Site ID is required'));
     }
 
-    const pseudoId = props.pseudonymizedPersonId ?? pseudonymizePersonId(props.rawPersonId);
+    const pseudoId = props.pseudonymizedPersonId ?? (props.rawPersonId ? pseudonymizePersonId(props.rawPersonId) : null);
 
     return ok(new Alert({
       ...props,

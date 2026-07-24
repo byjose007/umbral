@@ -81,8 +81,8 @@ export class NotificationTemplateEngine {
     for (const [key, val] of Object.entries(params)) {
       const placeholder = `{{${key}}}`;
       const strVal = String(val ?? '');
-      subject = subject.replaceAll(placeholder, strVal);
-      body = body.replaceAll(placeholder, strVal);
+      subject = subject.split(placeholder).join(strVal);
+      body = body.split(placeholder).join(strVal);
     }
 
     return ok({ subject, body });

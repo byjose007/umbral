@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { sha256Hex } from '../crypto-utils.js';
 
 export const GENESIS_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -10,5 +10,5 @@ export function computeEventHash(
   payloadStr = ''
 ): string {
   const content = `${prevHash}::${eventId}::${timestampISO}::${eventType}::${payloadStr}`;
-  return createHash('sha256').update(content).digest('hex');
+  return sha256Hex(content);
 }

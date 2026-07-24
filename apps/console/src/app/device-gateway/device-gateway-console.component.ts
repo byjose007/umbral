@@ -81,9 +81,9 @@ export interface ControllerGatewayView {
             </div>
 
             <div class="p-item">
-              <h3>📦 Ingesta Idempotente (`event_id`)</h3>
+              <h3>📦 Ingesta Idempotente (<code>event_id</code>)</h3>
               <p>
-                Los controladores bufferizan eventos durante desconexiones. Al reconectar, el gateway filtra duplicados mediante `event_id` garantizando store-and-forward sin pérdidas.
+                Los controladores bufferizan eventos durante desconexiones. Al reconectar, el gateway filtra duplicados mediante <code>event_id</code> garantizando store-and-forward sin pérdidas.
               </p>
             </div>
 

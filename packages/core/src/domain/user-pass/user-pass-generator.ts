@@ -1,115 +1,111 @@
-import { createHmac } from 'node:crypto';
+import { hmacSha256Hex } from '../crypto-utils.js';
 
 export type TokenMode = 'normal' | 'duress';
 
-export interface UserPassTokenResult {
-  token: string;
-  expiresInSec: number;
-  timeBucket: number;
-  mode: TokenMode;
+export interface GeneratedTokenResult {
+  readonly token: string;
+  readonly mode: TokenMode;
+  readonly validUntil: Date;
+  readonly windowIndex: number;
+  readonly timeBucket: number;
+  readonly expiresInSec: number;
 }
 
-export interface VisitorPassTokenResult {
-  token: string;
-  validFrom: Date;
-  validTo: Date;
-  maxUses: number;
-}
-
-/**
- * Generates a dynamic 30-second rotating HMAC-SHA256 QR token for a user's pass.
- * Supports both normal access and silent duress mode.
- *
- * Offline capable: relies only on a pre-cached seed and system clock.
- */
 export function generateUserPassToken(
   seedSecret: string,
   personId: string,
-  nowMs: number = Date.now(),
-  stepSec = 30,
-  mode: TokenMode = 'normal',
-): UserPassTokenResult {
-  const timeBucket = Math.floor(nowMs / 1000 / stepSec);
-  const secondsRemaining = stepSec - (Math.floor(nowMs / 1000) % stepSec);
+  at: Date | number | TokenMode = new Date(),
+  validitySecondsOrMode: number | TokenMode = 30,
+  mode: TokenMode = 'normal'
+): GeneratedTokenResult {
+  let actualAt: Date | number = new Date();
+  let actualValiditySec = 30;
+  let actualMode: TokenMode = 'normal';
 
-  const modeFlag = mode === 'duress' ? 'D' : 'N';
-  const payload = `${personId}::${timeBucket}::${modeFlag}`;
-  const signature = createHmac('sha256', seedSecret)
-    .update(payload)
-    .digest('hex')
-    .substring(0, 16);
-
-  const token = `UMBRAL-UP-v1.${personId}.${timeBucket}.${modeFlag}.${signature}`;
-
-  return {
-    token,
-    expiresInSec: secondsRemaining,
-    timeBucket,
-    mode,
-  };
-}
-
-/**
- * Verifies a user pass token (normal or duress).
- * Returns { valid: true, mode } on success, or { valid: false } on failure.
- */
-export function verifyUserPassToken(
-  token: string,
-  seedSecret: string,
-  nowMs: number = Date.now(),
-  stepSec = 30,
-  allowedDriftBuckets = 1,
-): { valid: boolean; mode?: TokenMode } {
-  if (!token?.startsWith('UMBRAL-UP-v1.')) return { valid: false };
-
-  const parts = token.split('.');
-  if (parts.length !== 5) return { valid: false };
-
-  const [, personId, tokenBucketStr, modeFlag, providedSignature] = parts;
-  const tokenBucket = parseInt(tokenBucketStr!, 10);
-  if (isNaN(tokenBucket)) return { valid: false };
-  if (modeFlag !== 'N' && modeFlag !== 'D') return { valid: false };
-
-  const currentBucket = Math.floor(nowMs / 1000 / stepSec);
-
-  for (let offset = -allowedDriftBuckets; offset <= allowedDriftBuckets; offset++) {
-    if (currentBucket + offset === tokenBucket) {
-      const expectedPayload = `${personId}::${tokenBucket}::${modeFlag}`;
-      const expectedSig = createHmac('sha256', seedSecret)
-        .update(expectedPayload)
-        .digest('hex')
-        .substring(0, 16);
-
-      if (providedSignature === expectedSig) {
-        return { valid: true, mode: modeFlag === 'D' ? 'duress' : 'normal' };
-      }
+  if (typeof at === 'string' && (at === 'normal' || at === 'duress')) {
+    actualMode = at;
+    actualAt = new Date();
+  } else {
+    if (typeof at === 'number' || at instanceof Date) {
+      actualAt = at;
+    }
+    if (typeof validitySecondsOrMode === 'number') {
+      actualValiditySec = validitySecondsOrMode;
+      actualMode = mode;
+    } else if (typeof validitySecondsOrMode === 'string') {
+      actualMode = validitySecondsOrMode as TokenMode;
     }
   }
 
-  return { valid: false };
+  const atDate = typeof actualAt === 'number' ? new Date(actualAt) : actualAt;
+  const nowMs = atDate.getTime();
+  const windowIndex = Math.floor(nowMs / (actualValiditySec * 1000));
+  const validUntil = new Date((windowIndex + 1) * actualValiditySec * 1000);
+  const expiresInSec = Math.max(0, Math.ceil((validUntil.getTime() - nowMs) / 1000));
+
+  const modeChar = actualMode === 'duress' ? 'D' : 'N';
+  const payload = `USER-PASS::${personId}::${windowIndex}::${modeChar}`;
+  const hmac = hmacSha256Hex(seedSecret, payload).substring(0, 16);
+
+  const token = `UMBRAL-UP-v1.${personId}.${windowIndex}.${modeChar}.${hmac}`;
+
+  return {
+    token,
+    mode: actualMode,
+    validUntil,
+    windowIndex,
+    timeBucket: windowIndex,
+    expiresInSec,
+  };
 }
 
-/**
- * Generates a signed token for a visitor guest pass.
- * Encodes visitorId, validFrom epoch, validTo epoch and maxUses.
- */
+export function verifyUserPassToken(
+  token: string,
+  seedSecret: string,
+  at: Date | number = new Date(),
+  validitySeconds = 30
+): { valid: boolean; mode?: TokenMode; personId?: string; reason?: string } {
+  if (!token || typeof token !== 'string') {
+    return { valid: false, reason: 'INVALID_FORMAT' };
+  }
+
+  const atDate = typeof at === 'number' ? new Date(at) : at;
+  const parts = token.split('.');
+
+  if (parts.length === 5 && parts[0] === 'UMBRAL-UP-v1') {
+    const [_, personId, winStr, modeChar, sig] = parts;
+    const windowIndex = parseInt(winStr, 10);
+    const mode: TokenMode = modeChar === 'D' ? 'duress' : 'normal';
+
+    const currentWindowIndex = Math.floor(atDate.getTime() / (validitySeconds * 1000));
+
+    if (Math.abs(currentWindowIndex - windowIndex) > 1) {
+      return { valid: false, reason: 'TOKEN_EXPIRED' };
+    }
+
+    const expectedPayload = `USER-PASS::${personId}::${windowIndex}::${modeChar}`;
+    const expectedHmac = hmacSha256Hex(seedSecret, expectedPayload).substring(0, 16);
+
+    if (sig !== expectedHmac) {
+      return { valid: false, reason: 'INVALID_SIGNATURE' };
+    }
+
+    return { valid: true, mode, personId };
+  }
+
+  return { valid: false, reason: 'INVALID_FORMAT' };
+}
+
 export function generateVisitorPassToken(
   seedSecret: string,
   visitorPassId: string,
   validFrom: Date,
   validTo: Date,
-  maxUses: number,
-): VisitorPassTokenResult {
-  const fromEpoch = validFrom.getTime();
-  const toEpoch = validTo.getTime();
+  maxUses = 1
+): { token: string; signature: string } {
+  const payload = `VISITOR-PASS::ID=${visitorPassId}::FROM=${validFrom.toISOString()}::TO=${validTo.toISOString()}::USES=${maxUses}`;
+  const signature = hmacSha256Hex(seedSecret, payload).substring(0, 16);
+  const token = `UMBRAL-VP-v1.${visitorPassId}.${validFrom.getTime()}.${validTo.getTime()}.${maxUses}.${signature}`;
 
-  const payload = `${visitorPassId}::${fromEpoch}::${toEpoch}::${maxUses}`;
-  const signature = createHmac('sha256', seedSecret)
-    .update(payload)
-    .digest('hex')
-    .substring(0, 16);
-
-  const token = `UMBRAL-VP-v1.${visitorPassId}.${fromEpoch}.${toEpoch}.${maxUses}.${signature}`;
-
-  return { token, validFrom, validTo, maxUses };
+  return { token, signature };
 }

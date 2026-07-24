@@ -14,6 +14,7 @@ import { GuardPwaModule } from './modules/guard-pwa/guard-pwa.module';
 import { WorkflowModule } from './modules/workflow/workflow.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ComplianceModule } from './modules/compliance/compliance.module';
     WorkflowModule,
     NotificationsModule,
     ComplianceModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -111,6 +111,17 @@ export * from './domain/compliance/pii-audit.entity.js';
 export * from './domain/compliance/arco.service.js';
 export * from './domain/compliance/privacy-notice.entity.js';
 
+// Domain — Analytics & Muster
+export * from './domain/analytics/ids.js';
+export * from './domain/analytics/errors.js';
+export * from './domain/analytics/flow-aggregates.js';
+export * from './domain/analytics/zone-occupancy.js';
+export * from './domain/analytics/person-trajectory.js';
+export * from './domain/analytics/anomalies-detector.js';
+export * from './domain/analytics/system-health.js';
+export * from './domain/analytics/reports.js';
+
+
 
 
 

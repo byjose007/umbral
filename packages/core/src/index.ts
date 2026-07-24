@@ -121,6 +121,15 @@ export * from './domain/analytics/anomalies-detector.js';
 export * from './domain/analytics/system-health.js';
 export * from './domain/analytics/reports.js';
 
+// Domain — HRIS Sync (Import Watcher)
+export * from './domain/hris-sync/ids.js';
+export * from './domain/hris-sync/errors.js';
+export * from './domain/hris-sync/hris-record.vo.js';
+export * from './domain/hris-sync/csv-parser.js';
+export * from './domain/hris-sync/watcher.port.js';
+export * from './domain/hris-sync/reconciler.js';
+
+
 
 
 

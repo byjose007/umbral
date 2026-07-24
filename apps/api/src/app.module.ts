@@ -15,6 +15,7 @@ import { WorkflowModule } from './modules/workflow/workflow.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { HrisSyncModule } from './modules/hris-sync/hris-sync.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     NotificationsModule,
     ComplianceModule,
     AnalyticsModule,
+    HrisSyncModule,
   ],
   controllers: [AppController],
   providers: [AppService],

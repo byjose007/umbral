@@ -4,7 +4,6 @@ import { IdentityController } from './identity.controller';
 import { IdentityService } from './identity.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
-
 describe('IdentityModule', () => {
   let controller: IdentityController;
   let service: IdentityService;
@@ -58,7 +57,7 @@ describe('IdentityModule', () => {
         firstName: 'Pedro',
         lastName: 'Ramírez',
         nationalId: '1799887766',
-      })
+      }),
     ).toThrow(BadRequestException);
   });
 
@@ -77,7 +76,10 @@ describe('IdentityModule', () => {
       validFrom: '2026-01-01T00:00:00.000Z',
     });
 
-    const status = controller.getPersonAccessStatus(person.id, '2026-07-15T00:00:00.000Z');
+    const status = controller.getPersonAccessStatus(
+      person.id,
+      '2026-07-15T00:00:00.000Z',
+    );
     expect(status.status).toBe('allowed');
   });
 
@@ -104,13 +106,19 @@ describe('IdentityModule', () => {
       blocksAccess: true,
     });
 
-    const blocked = controller.getPersonAccessStatus(person.id, '2026-07-15T12:00:00.000Z');
+    const blocked = controller.getPersonAccessStatus(
+      person.id,
+      '2026-07-15T12:00:00.000Z',
+    );
     expect(blocked.status).toBe('blocked');
     if (blocked.status === 'blocked') {
       expect(blocked.reasonCode).toBe('ABSENCE_ACTIVE');
     }
 
-    const unblocked = controller.getPersonAccessStatus(person.id, '2026-07-21T08:00:00.000Z');
+    const unblocked = controller.getPersonAccessStatus(
+      person.id,
+      '2026-07-21T08:00:00.000Z',
+    );
     expect(unblocked.status).toBe('allowed');
   });
 
@@ -136,7 +144,7 @@ describe('IdentityModule', () => {
         contractType: 'full_time',
         validFrom: '2026-05-01T00:00:00.000Z',
         validUntil: '2026-12-31T23:59:59.000Z',
-      })
+      }),
     ).toThrow(BadRequestException);
   });
 });

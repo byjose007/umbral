@@ -22,7 +22,7 @@ export const mobilePasses = pgTable(
   },
   (table) => ({
     personIdIdx: index('idx_mobile_passes_person_id').on(table.personId),
-  })
+  }),
 );
 
 export const visitorPasses = pgTable(
@@ -43,7 +43,7 @@ export const visitorPasses = pgTable(
   },
   (table) => ({
     issuerIdx: index('idx_visitor_passes_issuer').on(table.issuerPersonId),
-  })
+  }),
 );
 
 export const musterSnapshots = pgTable(
@@ -61,7 +61,7 @@ export const musterSnapshots = pgTable(
   },
   (table) => ({
     siteIdIdx: index('idx_muster_site_id').on(table.siteId),
-  })
+  }),
 );
 
 export const guardOverrideLogs = pgTable(
@@ -78,6 +78,5 @@ export const guardOverrideLogs = pgTable(
   },
   (table) => ({
     guardIdx: index('idx_guard_override_guard_person').on(table.guardPersonId),
-  })
+  }),
 );
-

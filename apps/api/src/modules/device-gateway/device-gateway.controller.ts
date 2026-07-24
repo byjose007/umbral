@@ -34,7 +34,7 @@ export class DeviceGatewayController {
   @Post('heartbeat')
   recordHeartbeat(
     @Body() dto: HeartbeatDto,
-    @Query('serverMatrixVersion') serverMatrixVersion?: string
+    @Query('serverMatrixVersion') serverMatrixVersion?: string,
   ) {
     const version = serverMatrixVersion ? parseInt(serverMatrixVersion, 10) : 1;
     return this.deviceGatewayService.recordHeartbeat(dto, version);
@@ -43,7 +43,7 @@ export class DeviceGatewayController {
   @Get('controllers/:id/health')
   getDeviceHealth(
     @Param('id') id: string,
-    @Query('serverMatrixVersion') serverMatrixVersion?: string
+    @Query('serverMatrixVersion') serverMatrixVersion?: string,
   ) {
     const version = serverMatrixVersion ? parseInt(serverMatrixVersion, 10) : 1;
     return this.deviceGatewayService.getDeviceHealth(id, version);

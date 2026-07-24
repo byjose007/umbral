@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   Person,
   EmploymentPeriod,
@@ -32,7 +36,7 @@ export class IdentityService {
     for (const p of this.personsMap.values()) {
       if (p.siteId === dto.siteId && p.nationalId === dto.nationalId) {
         throw new BadRequestException(
-          `Person with national ID ${dto.nationalId} already exists for this site`
+          `Person with national ID ${dto.nationalId} already exists for this site`,
         );
       }
     }
@@ -77,7 +81,9 @@ export class IdentityService {
       throw new NotFoundException(`Person ${id} not found`);
     }
 
-    const periods = (this.employmentPeriodsMap.get(id) || []).map((p) => p.props);
+    const periods = (this.employmentPeriodsMap.get(id) || []).map(
+      (p) => p.props,
+    );
     const absences = (this.absencesMap.get(id) || []).map((a) => a.props);
     const documents = (this.documentsMap.get(id) || []).map((d) => d.props);
 
@@ -105,7 +111,7 @@ export class IdentityService {
     for (const ep of existingPeriods) {
       if (ep.overlapsWith(validFrom, validUntil)) {
         throw new BadRequestException(
-          'Employment period overlaps with an existing period for this person'
+          'Employment period overlaps with an existing period for this person',
         );
       }
     }
@@ -227,7 +233,13 @@ export class IdentityService {
     const documents = this.documentsMap.get(personId) || [];
     const at = atISO ? new Date(atISO) : new Date();
 
-    const result = evaluateAccessStatus(person, periods, absences, documents, at);
+    const result = evaluateAccessStatus(
+      person,
+      periods,
+      absences,
+      documents,
+      at,
+    );
 
     if (result.isOk()) {
       return result.value;

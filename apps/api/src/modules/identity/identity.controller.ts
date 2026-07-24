@@ -29,10 +29,7 @@ export class IdentityController {
 
   // Derived Access Status
   @Get('persons/:id/access-status')
-  getPersonAccessStatus(
-    @Param('id') id: string,
-    @Query('at') at?: string
-  ) {
+  getPersonAccessStatus(@Param('id') id: string, @Query('at') at?: string) {
     return this.identityService.evaluatePersonAccessStatus(id, at);
   }
 

@@ -1,6 +1,10 @@
 import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
-import { DispatchNotificationDto, TestChannelDto, GetNotificationLogsDto } from './dto/notifications.dto';
+import {
+  DispatchNotificationDto,
+  TestChannelDto,
+  GetNotificationLogsDto,
+} from './dto/notifications.dto';
 
 @Controller('notifications')
 export class NotificationsController {

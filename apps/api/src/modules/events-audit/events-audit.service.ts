@@ -30,7 +30,7 @@ export class EventsAuditService {
     const sequenceNumber = partitionEvents.length + 1;
     const previousHash =
       partitionEvents.length > 0
-        ? partitionEvents[partitionEvents.length - 1]!.currentHash
+        ? partitionEvents[partitionEvents.length - 1].currentHash
         : GENESIS_HASH;
 
     const id = makeAccessEventId(uuidv4());
@@ -44,7 +44,7 @@ export class EventsAuditService {
       id,
       timestampISO,
       dto.eventType,
-      payloadStr
+      payloadStr,
     );
 
     const res = AccessEvent.create({
@@ -57,9 +57,13 @@ export class EventsAuditService {
       severity: dto.severity,
       siteId: makeSiteId(dto.siteId),
       doorId: dto.doorId ? makeDoorId(dto.doorId) : null,
-      controllerId: dto.controllerId ? makeControllerId(dto.controllerId) : null,
+      controllerId: dto.controllerId
+        ? makeControllerId(dto.controllerId)
+        : null,
       personId: dto.personId ? makePersonId(dto.personId) : null,
-      credentialId: dto.credentialId ? makeCredentialId(dto.credentialId) : null,
+      credentialId: dto.credentialId
+        ? makeCredentialId(dto.credentialId)
+        : null,
       direction: dto.direction,
       reasonCode: dto.reasonCode,
       details,
@@ -109,7 +113,8 @@ export class EventsAuditService {
   }
 
   public verifyChain(dto: VerifyChainDto) {
-    const partitionEvents = this.eventsByPartitionMap.get(dto.chainPartition) || [];
+    const partitionEvents =
+      this.eventsByPartitionMap.get(dto.chainPartition) || [];
     const res = verifyEventChain(partitionEvents);
 
     if (res.isOk()) {

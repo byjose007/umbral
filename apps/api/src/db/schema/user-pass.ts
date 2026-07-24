@@ -63,7 +63,9 @@ export const userAccessHistory = pgTable(
   },
   (table) => ({
     personIdIdx: index('idx_user_access_history_person_id').on(table.personId),
-    occurredAtIdx: index('idx_user_access_history_occurred_at').on(table.occurredAt),
+    occurredAtIdx: index('idx_user_access_history_occurred_at').on(
+      table.occurredAt,
+    ),
   }),
 );
 

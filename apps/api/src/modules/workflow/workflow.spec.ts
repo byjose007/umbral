@@ -19,7 +19,12 @@ describe('WorkflowModule', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [WorkflowController, PortalController, IdentityController, AccessRightsController],
+      controllers: [
+        WorkflowController,
+        PortalController,
+        IdentityController,
+        AccessRightsController,
+      ],
       providers: [WorkflowService, IdentityService, AccessRightsService],
     }).compile();
 
@@ -94,7 +99,10 @@ describe('WorkflowModule', () => {
     workflowController.moveToReview(request.id, { actor: 'reviewer-1' });
 
     expect(() =>
-      workflowController.approve(request.id, { actor: 'approver-1', reason: 'OK' })
+      workflowController.approve(request.id, {
+        actor: 'approver-1',
+        reason: 'OK',
+      }),
     ).toThrow(BadRequestException);
 
     identityController.createPersonDocument({
@@ -105,7 +113,10 @@ describe('WorkflowModule', () => {
       blocksAccessOnExpiry: true,
     });
 
-    const approved = workflowController.approve(request.id, { actor: 'approver-1', reason: 'OK' });
+    const approved = workflowController.approve(request.id, {
+      actor: 'approver-1',
+      reason: 'OK',
+    });
     expect(approved.status).toBe('active');
     expect(approved.decidedBy).toBe('approver-1');
   });
@@ -124,10 +135,13 @@ describe('WorkflowModule', () => {
     });
 
     workflowController.moveToReview(request.id, { actor: 'reviewer-1' });
-    workflowController.reject(request.id, { actor: 'reviewer-1', reason: 'Fuera de alcance' });
+    workflowController.reject(request.id, {
+      actor: 'reviewer-1',
+      reason: 'Fuera de alcance',
+    });
 
     expect(() =>
-      workflowController.approve(request.id, { actor: 'approver-1' })
+      workflowController.approve(request.id, { actor: 'approver-1' }),
     ).toThrow(BadRequestException);
   });
 });

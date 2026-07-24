@@ -40,7 +40,7 @@ describe('NotificationsModule', () => {
 
     const logs = controller.getNotificationLogs('ALT-101');
     expect(logs.length).toBe(1);
-    expect(logs[0]!.channel).toBe('whatsapp');
+    expect(logs[0].channel).toBe('whatsapp');
   });
 
   it('should enforce idempotency and prevent duplicate dispatches for the same alert target', async () => {
@@ -61,7 +61,7 @@ describe('NotificationsModule', () => {
         recipientTarget: '+593998765432',
         channel: 'whatsapp',
         payload: { zoneId: 'ZONA-B', doorId: 'P-02' },
-      })
+      }),
     ).rejects.toThrow(ConflictException);
   });
 

@@ -37,7 +37,9 @@ describe('EventsAuditModule', () => {
     });
 
     expect(e1.sequenceNumber).toBe(1);
-    expect(e1.previousHash).toBe('0000000000000000000000000000000000000000000000000000000000000000');
+    expect(e1.previousHash).toBe(
+      '0000000000000000000000000000000000000000000000000000000000000000',
+    );
     expect(e1.currentHash.length).toBe(64);
 
     const e2 = controller.recordEvent({

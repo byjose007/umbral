@@ -15,7 +15,9 @@ export const credentials = pgTable(
       .notNull()
       .references(() => persons.id, { onDelete: 'cascade' }),
     credentialType: varchar('credential_type', { length: 32 }).notNull(),
-    credentialHash: varchar('credential_hash', { length: 128 }).notNull().unique(),
+    credentialHash: varchar('credential_hash', { length: 128 })
+      .notNull()
+      .unique(),
     pinHash: varchar('pin_hash', { length: 128 }),
     duressPinHash: varchar('duress_pin_hash', { length: 128 }),
     status: varchar('status', { length: 32 }).notNull().default('active'),
@@ -28,7 +30,9 @@ export const credentials = pgTable(
   },
   (table) => ({
     personIdIdx: index('idx_credentials_person_id').on(table.personId),
-    credentialHashIdx: uniqueIndex('idx_credentials_hash').on(table.credentialHash),
+    credentialHashIdx: uniqueIndex('idx_credentials_hash').on(
+      table.credentialHash,
+    ),
     statusIdx: index('idx_credentials_status').on(table.status),
-  })
+  }),
 );

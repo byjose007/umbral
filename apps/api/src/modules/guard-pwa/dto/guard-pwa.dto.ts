@@ -16,5 +16,8 @@ export interface RecordGuardOverrideLogDto {
   readonly targetDocument?: string;
   readonly doorId: string;
   readonly reason: string;
-  readonly action: 'manual_contingency_grant' | 'manual_contingency_deny' | 'identity_unmask_audit';
+  readonly action:
+    | 'manual_contingency_grant'
+    | 'manual_contingency_deny'
+    | 'identity_unmask_audit';
 }

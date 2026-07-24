@@ -23,7 +23,7 @@ export const holidayCalendars = pgTable(
   },
   (table) => ({
     siteIdIdx: index('idx_holiday_cals_site_id').on(table.siteId),
-  })
+  }),
 );
 
 export const holidays = pgTable(
@@ -39,8 +39,11 @@ export const holidays = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => ({
-    calDateIdx: uniqueIndex('idx_holidays_cal_date').on(table.calendarId, table.date),
-  })
+    calDateIdx: uniqueIndex('idx_holidays_cal_date').on(
+      table.calendarId,
+      table.date,
+    ),
+  }),
 );
 
 export const schedules = pgTable(
@@ -51,16 +54,18 @@ export const schedules = pgTable(
       .notNull()
       .references(() => sites.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 128 }).notNull(),
-    holidayCalendarId: varchar('holiday_calendar_id', { length: 36 }).references(
-      () => holidayCalendars.id
-    ),
-    holidayBehavior: varchar('holiday_behavior', { length: 32 }).notNull().default('block_all'),
+    holidayCalendarId: varchar('holiday_calendar_id', {
+      length: 36,
+    }).references(() => holidayCalendars.id),
+    holidayBehavior: varchar('holiday_behavior', { length: 32 })
+      .notNull()
+      .default('block_all'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => ({
     siteIdIdx: index('idx_schedules_site_id').on(table.siteId),
-  })
+  }),
 );
 
 export const scheduleWindows = pgTable(
@@ -77,7 +82,7 @@ export const scheduleWindows = pgTable(
   },
   (table) => ({
     schedIdIdx: index('idx_sched_windows_sched_id').on(table.scheduleId),
-  })
+  }),
 );
 
 export const accessLevels = pgTable(
@@ -94,7 +99,7 @@ export const accessLevels = pgTable(
   },
   (table) => ({
     siteIdIdx: index('idx_access_levels_site_id').on(table.siteId),
-  })
+  }),
 );
 
 export const accessLevelEntries = pgTable(
@@ -113,8 +118,11 @@ export const accessLevelEntries = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => ({
-    alDoorIdx: uniqueIndex('idx_al_entries_al_door').on(table.accessLevelId, table.doorId),
-  })
+    alDoorIdx: uniqueIndex('idx_al_entries_al_door').on(
+      table.accessLevelId,
+      table.doorId,
+    ),
+  }),
 );
 
 export const groups = pgTable(
@@ -131,7 +139,7 @@ export const groups = pgTable(
   },
   (table) => ({
     siteIdIdx: index('idx_groups_site_id').on(table.siteId),
-  })
+  }),
 );
 
 export const groupAccessLevels = pgTable(
@@ -147,8 +155,11 @@ export const groupAccessLevels = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => ({
-    groupAlIdx: uniqueIndex('idx_group_al_group_al').on(table.groupId, table.accessLevelId),
-  })
+    groupAlIdx: uniqueIndex('idx_group_al_group_al').on(
+      table.groupId,
+      table.accessLevelId,
+    ),
+  }),
 );
 
 export const personGroupAssignments = pgTable(
@@ -167,6 +178,9 @@ export const personGroupAssignments = pgTable(
   },
   (table) => ({
     personGroupIdx: index('idx_person_groups_person_id').on(table.personId),
-    validityIdx: index('idx_person_groups_validity').on(table.validFrom, table.validUntil),
-  })
+    validityIdx: index('idx_person_groups_validity').on(
+      table.validFrom,
+      table.validUntil,
+    ),
+  }),
 );

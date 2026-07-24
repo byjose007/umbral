@@ -13,15 +13,21 @@ export const accessRequests = pgTable(
       .references(() => sites.id, { onDelete: 'cascade' }),
     applicantType: varchar('applicant_type', { length: 16 }).notNull(),
     applicantName: varchar('applicant_name', { length: 128 }).notNull(),
-    applicantDocumentNumber: varchar('applicant_document_number', { length: 64 }),
-    applicantPersonId: varchar('applicant_person_id', { length: 36 }).references(() => persons.id),
+    applicantDocumentNumber: varchar('applicant_document_number', {
+      length: 64,
+    }),
+    applicantPersonId: varchar('applicant_person_id', {
+      length: 36,
+    }).references(() => persons.id),
     requestedAccessLevelId: varchar('requested_access_level_id', { length: 36 })
       .notNull()
       .references(() => accessLevels.id),
     reason: varchar('reason', { length: 512 }).notNull(),
     validFrom: timestamp('valid_from').notNull(),
     validUntil: timestamp('valid_until').notNull(),
-    requiredDocumentTypes: jsonb('required_document_types').notNull().default('[]'),
+    requiredDocumentTypes: jsonb('required_document_types')
+      .notNull()
+      .default('[]'),
     status: varchar('status', { length: 32 }).notNull().default('requested'),
     decidedBy: varchar('decided_by', { length: 128 }),
     decidedAt: timestamp('decided_at'),
@@ -32,5 +38,5 @@ export const accessRequests = pgTable(
   (table) => ({
     siteIdIdx: index('idx_access_requests_site_id').on(table.siteId),
     statusIdx: index('idx_access_requests_status').on(table.status),
-  })
+  }),
 );

@@ -1,4 +1,9 @@
-import { Injectable, ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   FlowAggregator,
   FlowBucket,
@@ -22,7 +27,12 @@ import {
   computeEventHash,
   GENESIS_HASH,
 } from '@umbral/core';
-import { QueryFlowAggregatesDto, QueryTrajectoryDto, SaveFilterDto, ExportReportDto } from './dto/analytics.dto.js';
+import {
+  QueryFlowAggregatesDto,
+  QueryTrajectoryDto,
+  SaveFilterDto,
+  ExportReportDto,
+} from './dto/analytics.dto.js';
 
 @Injectable()
 export class AnalyticsService {
@@ -49,7 +59,13 @@ export class AnalyticsService {
         const inTime = new Date(`${d}T08:30:00Z`);
         const eInId = makeAccessEventId(`evt-in-${seq}`);
         const payloadIn = JSON.stringify({});
-        const hashIn = computeEventHash(prevHash, eInId, inTime.toISOString(), 'access.granted', payloadIn);
+        const hashIn = computeEventHash(
+          prevHash,
+          eInId,
+          inTime.toISOString(),
+          'access.granted',
+          payloadIn,
+        );
 
         const evIn = AccessEvent.create({
           id: eInId,
@@ -72,7 +88,13 @@ export class AnalyticsService {
           const outTime = new Date(`${d}T17:30:00Z`);
           const eOutId = makeAccessEventId(`evt-out-${seq}`);
           const payloadOut = JSON.stringify({});
-          const hashOut = computeEventHash(prevHash, eOutId, outTime.toISOString(), 'access.granted', payloadOut);
+          const hashOut = computeEventHash(
+            prevHash,
+            eOutId,
+            outTime.toISOString(),
+            'access.granted',
+            payloadOut,
+          );
 
           const evOut = AccessEvent.create({
             id: eOutId,
@@ -106,7 +128,9 @@ export class AnalyticsService {
     return Array.from(bucketsMap.values());
   }
 
-  public getPeakFlowDay(dto?: QueryFlowAggregatesDto): PeakFlowDayResult | null {
+  public getPeakFlowDay(
+    dto?: QueryFlowAggregatesDto,
+  ): PeakFlowDayResult | null {
     const buckets = this.getFlowAggregates(dto);
     return FlowAggregator.findPeakFlowDay(buckets);
   }
@@ -123,14 +147,17 @@ export class AnalyticsService {
 
   // --- PERSON TRAJECTORY ---
 
-  public getPersonTrajectory(personId: string, dto: QueryTrajectoryDto): PersonTrajectoryResult {
+  public getPersonTrajectory(
+    personId: string,
+    dto: QueryTrajectoryDto,
+  ): PersonTrajectoryResult {
     const roles = dto.operatorRoles ?? ['operator'];
     const res = PersonTrajectoryTracker.getTrajectory(
       this.events,
       personId,
       dto.operatorId,
       roles,
-      dto.justification
+      dto.justification,
     );
 
     if (res.isErr()) {
@@ -169,7 +196,7 @@ export class AnalyticsService {
       readers,
       doors,
       { activeCount: 240, totalCount: 250 },
-      { activeCount: 12, totalCount: 15 }
+      { activeCount: 12, totalCount: 15 },
     );
   }
 
@@ -206,18 +233,26 @@ export class AnalyticsService {
 
     if (dto.reportType === 'flow') {
       const buckets = this.getFlowAggregates();
-      dataObj = buckets.map(b => ({ ...b }));
+      dataObj = buckets.map((b) => ({ ...b }));
     } else if (dto.reportType === 'occupancy') {
       const muster = this.getServerMusterRoll();
-      dataObj = muster.occupants.map(o => ({ ...o }));
+      dataObj = muster.occupants.map((o) => ({ ...o }));
     } else if (dto.reportType === 'anomalies') {
       const anomalies = this.getAnomalies();
-      dataObj = anomalies.map(a => ({ ...a }));
+      dataObj = anomalies.map((a) => ({ ...a }));
     } else if (dto.reportType === 'health') {
       const health = this.getHealthDashboard();
       dataObj = [
-        { resource: 'controllers', online: health.controllers.onlineCount, total: health.controllers.totalCount },
-        { resource: 'readers', online: health.readers.onlineCount, total: health.readers.totalCount },
+        {
+          resource: 'controllers',
+          online: health.controllers.onlineCount,
+          total: health.controllers.totalCount,
+        },
+        {
+          resource: 'readers',
+          online: health.readers.onlineCount,
+          total: health.readers.totalCount,
+        },
       ];
     }
 

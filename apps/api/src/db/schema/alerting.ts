@@ -26,7 +26,7 @@ export const alertRules = pgTable(
   },
   (table) => ({
     siteIdIdx: index('idx_rules_site_id').on(table.siteId),
-  })
+  }),
 );
 
 export const alerts = pgTable(
@@ -51,7 +51,7 @@ export const alerts = pgTable(
   (table) => ({
     siteIdIdx: index('idx_alerts_site_id').on(table.siteId),
     statusIdx: index('idx_alerts_status').on(table.status),
-  })
+  }),
 );
 
 export const alertPiiAuditLogs = pgTable(
@@ -67,5 +67,5 @@ export const alertPiiAuditLogs = pgTable(
   },
   (table) => ({
     alertIdIdx: index('idx_pii_audit_alert_id').on(table.alertId),
-  })
+  }),
 );

@@ -1,9 +1,19 @@
 import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
 import { ComplianceService } from './compliance.service.js';
-import { CreateRetentionPolicyDto, ExecutePurgeDto } from './dto/retention-policy.dto.js';
+import {
+  CreateRetentionPolicyDto,
+  ExecutePurgeDto,
+} from './dto/retention-policy.dto.js';
 import { RecordPiiAccessDto, QueryPiiAuditDto } from './dto/pii-audit.dto.js';
-import { ArcoExportRequestDto, ArcoRectifyRequestDto, ArcoAnonymizeRequestDto } from './dto/arco.dto.js';
-import { CreatePrivacyNoticeDto, RecordPrivacyConsentDto } from './dto/privacy.dto.js';
+import {
+  ArcoExportRequestDto,
+  ArcoRectifyRequestDto,
+  ArcoAnonymizeRequestDto,
+} from './dto/arco.dto.js';
+import {
+  CreatePrivacyNoticeDto,
+  RecordPrivacyConsentDto,
+} from './dto/privacy.dto.js';
 import { ComplianceDataType, TargetAudience } from '@umbral/core';
 
 @Controller('compliance')
@@ -42,17 +52,26 @@ export class ComplianceController {
   // --- ARCO RIGHTS ---
 
   @Post('arco/export/:personId')
-  exportPersonData(@Param('personId') personId: string, @Body() dto: ArcoExportRequestDto) {
+  exportPersonData(
+    @Param('personId') personId: string,
+    @Body() dto: ArcoExportRequestDto,
+  ) {
     return this.complianceService.exportPersonData(personId, dto);
   }
 
   @Put('arco/rectify/:personId')
-  rectifyPersonData(@Param('personId') personId: string, @Body() dto: ArcoRectifyRequestDto) {
+  rectifyPersonData(
+    @Param('personId') personId: string,
+    @Body() dto: ArcoRectifyRequestDto,
+  ) {
     return this.complianceService.rectifyPersonData(personId, dto);
   }
 
   @Post('arco/anonymize/:personId')
-  anonymizePersonData(@Param('personId') personId: string, @Body() dto: ArcoAnonymizeRequestDto) {
+  anonymizePersonData(
+    @Param('personId') personId: string,
+    @Body() dto: ArcoAnonymizeRequestDto,
+  ) {
     return this.complianceService.anonymizePersonData(personId, dto);
   }
 

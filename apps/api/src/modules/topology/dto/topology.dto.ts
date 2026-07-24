@@ -32,7 +32,9 @@ export const CreateLockProfileSchema = z.object({
   isEgressRoute: z.boolean().default(false),
   releasesOnFire: z.boolean().default(false),
 });
-export class CreateLockProfileDto extends createZodDto(CreateLockProfileSchema) {}
+export class CreateLockProfileDto extends createZodDto(
+  CreateLockProfileSchema,
+) {}
 
 export const CreateControllerSchema = z.object({
   siteId: z.string().min(1),
@@ -70,13 +72,17 @@ export const ProposeLifeSafetyChangeSchema = z.object({
   reason: z.string().min(1),
   proposedChanges: CreateLockProfileSchema.partial(),
 });
-export class ProposeLifeSafetyChangeDto extends createZodDto(ProposeLifeSafetyChangeSchema) {}
+export class ProposeLifeSafetyChangeDto extends createZodDto(
+  ProposeLifeSafetyChangeSchema,
+) {}
 
 export const ApproveLifeSafetyChangeSchema = z.object({
   versionId: z.string().min(1),
   approver: z.string().min(1),
 });
-export class ApproveLifeSafetyChangeDto extends createZodDto(ApproveLifeSafetyChangeSchema) {}
+export class ApproveLifeSafetyChangeDto extends createZodDto(
+  ApproveLifeSafetyChangeSchema,
+) {}
 
 export const GrantAccessSchema = z.object({
   doorId: z.string().min(1),

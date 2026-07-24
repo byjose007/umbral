@@ -1,4 +1,9 @@
-import { ContractType, AbsenceType, DocumentType, PersonType } from '@umbral/core';
+import {
+  ContractType,
+  AbsenceType,
+  DocumentType,
+  PersonType,
+} from '@umbral/core';
 
 export interface CreatePersonDto {
   siteId: string;

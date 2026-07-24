@@ -1,6 +1,10 @@
 import { Controller, Get, Post, Put, Body } from '@nestjs/common';
 import { HrisSyncService } from './hris-sync.service.js';
-import { ImportCsvDto, ConfigureWatcherDto, TriggerBatchDto } from './dto/hris-sync.dto.js';
+import {
+  ImportCsvDto,
+  ConfigureWatcherDto,
+  TriggerBatchDto,
+} from './dto/hris-sync.dto.js';
 
 @Controller('hris-sync')
 export class HrisSyncController {
@@ -17,7 +21,10 @@ export class HrisSyncController {
 EMP-001,1712345678,Carlos,Mendoza,carlos@example.com,,employee,site-main,ACTIVE,2025-01-01,
 EMP-003,1799887766,David,Vargas,david@example.com,,employee,site-main,ACTIVE,2026-06-01,`;
 
-    return this.hrisSyncService.importCsv({ csvContent: sampleCsv }, dto.sourceName ?? 'scheduled-folder-watcher.csv');
+    return this.hrisSyncService.importCsv(
+      { csvContent: sampleCsv },
+      dto.sourceName ?? 'scheduled-folder-watcher.csv',
+    );
   }
 
   @Put('watcher')

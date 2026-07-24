@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   Credential,
   hashCredentialPayload,
@@ -25,7 +29,9 @@ export class CredentialsService {
     const credentialHash = hashCredentialPayload(dto.rawPayload);
 
     if (this.hashToIdMap.has(credentialHash)) {
-      throw new BadRequestException('A credential with this card/token payload already exists');
+      throw new BadRequestException(
+        'A credential with this card/token payload already exists',
+      );
     }
 
     const id = makeCredentialId(uuidv4());
@@ -102,7 +108,9 @@ export class CredentialsService {
       throw new NotFoundException(`Credential ${dto.credentialId} not found`);
     }
     if (!cred.isActiveAt()) {
-      throw new BadRequestException('Cannot generate QR for an inactive or blocked credential');
+      throw new BadRequestException(
+        'Cannot generate QR for an inactive or blocked credential',
+      );
     }
 
     const token = generateDynamicQRToken(
@@ -110,7 +118,7 @@ export class CredentialsService {
       cred.personId,
       dto.secretKey,
       dto.ttlSeconds ?? 60,
-      dto.isSingleUse ?? false
+      dto.isSingleUse ?? false,
     );
 
     return {
@@ -124,10 +132,15 @@ export class CredentialsService {
     // 1. Check if input is a dynamic QR token
     if (dto.rawPayloadOrQRToken.includes('.')) {
       if (!dto.secretKeyForQR) {
-        throw new BadRequestException('Secret key is required to verify signed QR token');
+        throw new BadRequestException(
+          'Secret key is required to verify signed QR token',
+        );
       }
 
-      const qrResult = verifyDynamicQRToken(dto.rawPayloadOrQRToken, dto.secretKeyForQR);
+      const qrResult = verifyDynamicQRToken(
+        dto.rawPayloadOrQRToken,
+        dto.secretKeyForQR,
+      );
       if (qrResult.isErr()) {
         return {
           valid: false,

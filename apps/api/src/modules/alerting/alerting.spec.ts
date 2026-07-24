@@ -71,12 +71,16 @@ describe('AlertingModule', () => {
     expect(proc.alerts[0].pseudonymizedPersonId).toMatch(/^USR-[A-Z0-9]{6}$/);
 
     // Operator acknowledges alert
-    const acked = controller.acknowledgeAlert(alertId, { operatorUser: 'admin.byron' });
+    const acked = controller.acknowledgeAlert(alertId, {
+      operatorUser: 'admin.byron',
+    });
     expect(acked.status).toBe('acknowledged');
     expect(acked.acknowledgedBy).toBe('admin.byron');
 
     // Operator reveals PII (audited)
-    const revealed = controller.revealPii(alertId, { operatorUser: 'admin.byron' });
+    const revealed = controller.revealPii(alertId, {
+      operatorUser: 'admin.byron',
+    });
     expect(revealed.rawPersonId).toBe('p-secret-123');
 
     const logs = controller.getPiiAuditLogs();

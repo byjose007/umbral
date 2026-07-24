@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   AlertRule,
   Alert,
@@ -66,22 +70,25 @@ export class AlertingService {
 
     // Check matching rules
     const matchingRules = Array.from(this.rulesMap.values()).filter(
-      (r) => r.siteId === dto.siteId && r.eventType === dto.eventType
+      (r) => r.siteId === dto.siteId && r.eventType === dto.eventType,
     );
 
     const createdAlerts: any[] = [];
 
     for (const rule of matchingRules) {
       // Deduplication check: active alert with same ruleId, siteId, doorId within dedupWindowSec
-      const isDuplicate = Array.from(this.alertsMap.values()).some((existing) => {
-        if (existing.props.ruleId !== rule.id) return false;
-        if (existing.siteId !== dto.siteId) return false;
-        if (dto.doorId && existing.doorId !== dto.doorId) return false;
-        if (existing.status !== 'active') return false;
+      const isDuplicate = Array.from(this.alertsMap.values()).some(
+        (existing) => {
+          if (existing.props.ruleId !== rule.id) return false;
+          if (existing.siteId !== dto.siteId) return false;
+          if (dto.doorId && existing.doorId !== dto.doorId) return false;
+          if (existing.status !== 'active') return false;
 
-        const timeDiffSec = (eventTime.getTime() - existing.timestamp.getTime()) / 1000;
-        return timeDiffSec <= rule.dedupWindowSec;
-      });
+          const timeDiffSec =
+            (eventTime.getTime() - existing.timestamp.getTime()) / 1000;
+          return timeDiffSec <= rule.dedupWindowSec;
+        },
+      );
 
       if (isDuplicate) {
         continue; // Skip creating duplicate alert
@@ -137,7 +144,9 @@ export class AlertingService {
       throw new NotFoundException(`Alert ${alertId} not found`);
     }
     if (!alert.rawPersonId) {
-      throw new BadRequestException(`No person PII associated with alert ${alertId}`);
+      throw new BadRequestException(
+        `No person PII associated with alert ${alertId}`,
+      );
     }
 
     // Log PII access in immutable audit trail for DP-06 compliance

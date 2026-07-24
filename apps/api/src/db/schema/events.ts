@@ -24,7 +24,9 @@ export const accessEvents = pgTable(
       .notNull()
       .references(() => sites.id),
     doorId: varchar('door_id', { length: 36 }).references(() => doors.id),
-    controllerId: varchar('controller_id', { length: 36 }).references(() => controllers.id),
+    controllerId: varchar('controller_id', { length: 36 }).references(
+      () => controllers.id,
+    ),
     personId: varchar('person_id', { length: 36 }).references(() => persons.id),
     credentialId: varchar('credential_id', { length: 36 }),
     direction: varchar('direction', { length: 16 }), // in, out
@@ -35,10 +37,10 @@ export const accessEvents = pgTable(
   (table) => ({
     partitionSeqIdx: uniqueIndex('idx_events_partition_seq').on(
       table.chainPartition,
-      table.sequenceNumber
+      table.sequenceNumber,
     ),
     timestampIdx: index('idx_events_timestamp').on(table.timestamp),
     doorIdIdx: index('idx_events_door_id').on(table.doorId),
     personIdIdx: index('idx_events_person_id').on(table.personId),
-  })
+  }),
 );

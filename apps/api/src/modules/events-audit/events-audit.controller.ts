@@ -21,7 +21,7 @@ export class EventsAuditController {
     @Query('chainPartition') chainPartition?: string,
     @Query('doorId') doorId?: string,
     @Query('personId') personId?: string,
-    @Query('limit') limit?: string
+    @Query('limit') limit?: string,
   ) {
     return this.eventsAuditService.getEvents({
       chainPartition,

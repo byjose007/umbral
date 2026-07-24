@@ -16,7 +16,7 @@ describe('Compliance Module (API)', () => {
     it('returns default retention policies', () => {
       const policies = controller.getRetentionPolicies();
       expect(policies.length).toBeGreaterThanOrEqual(4);
-      const photoPolicy = policies.find(p => p.dataType === 'visitor_photo');
+      const photoPolicy = policies.find((p) => p.dataType === 'visitor_photo');
       expect(photoPolicy?.retentionDays).toBe(30);
     });
 
@@ -46,7 +46,9 @@ describe('Compliance Module (API)', () => {
 
       expect(log.operatorId).toBe('op-supervisor');
 
-      const logs = controller.queryPiiAuditLogs({ targetPersonId: 'person-demo-1' });
+      const logs = controller.queryPiiAuditLogs({
+        targetPersonId: 'person-demo-1',
+      });
       expect(logs.length).toBe(1);
       expect(logs[0].justification).toBe('Audit review');
     });

@@ -70,7 +70,11 @@ export class UserPassService {
    * On first login the seed is generated; subsequent logins return the cached seed.
    * In production: validate pinHash against IdP; derive AES key; wrap seed in WebCrypto.
    */
-  login(dto: LoginUserPassDto): { seedSecret: string; encryptedSeed: string; salt: string } {
+  login(dto: LoginUserPassDto): {
+    seedSecret: string;
+    encryptedSeed: string;
+    salt: string;
+  } {
     if (!dto.personId || !dto.pinHash) {
       throw new UnauthorizedException('personId and pinHash are required');
     }
@@ -94,7 +98,9 @@ export class UserPassService {
     }
 
     if (record.status !== 'active') {
-      throw new UnauthorizedException(`Pass seed for person ${dto.personId} is revoked`);
+      throw new UnauthorizedException(
+        `Pass seed for person ${dto.personId} is revoked`,
+      );
     }
 
     return {
@@ -107,10 +113,16 @@ export class UserPassService {
   /**
    * Returns the current pass seed for a person (used by the PWA to refresh the cached seed).
    */
-  getSeed(personId: string): { seedSecret: string; encryptedSeed: string; salt: string } {
+  getSeed(personId: string): {
+    seedSecret: string;
+    encryptedSeed: string;
+    salt: string;
+  } {
     const record = this.seedStore.get(personId);
     if (!record || record.status !== 'active') {
-      throw new NotFoundException(`No active pass seed found for person ${personId}`);
+      throw new NotFoundException(
+        `No active pass seed found for person ${personId}`,
+      );
     }
     return {
       seedSecret: record.seedSecret,
@@ -125,10 +137,16 @@ export class UserPassService {
    * Server-side verification of a scanned QR token.
    * Returns whether the token is valid and whether it's a duress token.
    */
-  verifyToken(dto: VerifyUserPassTokenDto): { valid: boolean; mode?: TokenMode; personId: string } {
+  verifyToken(dto: VerifyUserPassTokenDto): {
+    valid: boolean;
+    mode?: TokenMode;
+    personId: string;
+  } {
     const record = this.seedStore.get(dto.personId);
     if (!record || record.status !== 'active') {
-      throw new NotFoundException(`No active pass seed for person ${dto.personId}`);
+      throw new NotFoundException(
+        `No active pass seed for person ${dto.personId}`,
+      );
     }
 
     const result = verifyUserPassToken(dto.token, record.seedSecret);
@@ -182,7 +200,9 @@ export class UserPassService {
     const validTo = new Date(dto.validTo);
 
     if (isNaN(validFrom.getTime()) || isNaN(validTo.getTime())) {
-      throw new BadRequestException('validFrom and validTo must be valid ISO 8601 date strings');
+      throw new BadRequestException(
+        'validFrom and validTo must be valid ISO 8601 date strings',
+      );
     }
 
     if (validTo <= validFrom) {
@@ -190,7 +210,9 @@ export class UserPassService {
     }
 
     if (validTo <= new Date()) {
-      throw new BadRequestException('Visitor pass cannot be issued with a past validTo date');
+      throw new BadRequestException(
+        'Visitor pass cannot be issued with a past validTo date',
+      );
     }
 
     const passId = uuidv4();
@@ -198,9 +220,16 @@ export class UserPassService {
 
     // Retrieve issuer seed for signing
     const seedRecord = this.seedStore.get(dto.issuerPersonId);
-    const seedSecret = seedRecord?.seedSecret ?? `UMBRAL-VISITOR-SEED-${dto.issuerPersonId}`;
+    const seedSecret =
+      seedRecord?.seedSecret ?? `UMBRAL-VISITOR-SEED-${dto.issuerPersonId}`;
 
-    const { token } = generateVisitorPassToken(seedSecret, passId, validFrom, validTo, maxUses);
+    const { token } = generateVisitorPassToken(
+      seedSecret,
+      passId,
+      validFrom,
+      validTo,
+      maxUses,
+    );
 
     const record: VisitorPassRecord = {
       id: passId,
@@ -244,16 +273,23 @@ export class UserPassService {
       }
     }
 
-    return results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return results.sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
   }
 
   /**
    * Records a use of a visitor pass.
    */
-  recordVisitorPassUse(dto: RecordVisitorPassUseDto): { remainingUses: number; status: string } {
+  recordVisitorPassUse(dto: RecordVisitorPassUseDto): {
+    remainingUses: number;
+    status: string;
+  } {
     const record = this.visitorPassStore.get(dto.visitorPassId);
     if (!record) {
-      throw new NotFoundException(`Visitor pass ${dto.visitorPassId} not found`);
+      throw new NotFoundException(
+        `Visitor pass ${dto.visitorPassId} not found`,
+      );
     }
 
     const now = new Date();
@@ -261,7 +297,9 @@ export class UserPassService {
       throw new BadRequestException('This visitor pass has expired');
     }
     if (record.usedCount >= record.maxUses) {
-      throw new BadRequestException('This visitor pass has reached its maximum uses');
+      throw new BadRequestException(
+        'This visitor pass has reached its maximum uses',
+      );
     }
 
     record.usedCount += 1;

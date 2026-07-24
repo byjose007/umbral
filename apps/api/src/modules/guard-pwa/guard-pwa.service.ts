@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { SaveMusterSnapshotDto, RecordGuardOverrideLogDto } from './dto/guard-pwa.dto';
+import {
+  SaveMusterSnapshotDto,
+  RecordGuardOverrideLogDto,
+} from './dto/guard-pwa.dto';
 import { PseudonymizedAlert, verifyGuardQRTokenOffline } from '@umbral/core';
 
 export interface GuardSyncData {
@@ -61,7 +64,9 @@ export class GuardPwaService {
       initiatedAt: new Date(),
       occupantsSnapshot: dto.occupantsSnapshot,
       totalInside: dto.occupantsSnapshot.length,
-      evacuatedCount: dto.occupantsSnapshot.filter((o) => o.status === 'evacuated_accounted').length,
+      evacuatedCount: dto.occupantsSnapshot.filter(
+        (o) => o.status === 'evacuated_accounted',
+      ).length,
     };
     this.musterSnapshots.push(snapshot);
     return { success: true, snapshotId: id, snapshot };
@@ -106,7 +111,11 @@ export class GuardPwaService {
   }
 
   verifyQR(token: string) {
-    return verifyGuardQRTokenOffline(token, this.mockSeedSecret, this.mockCrlList);
+    return verifyGuardQRTokenOffline(
+      token,
+      this.mockSeedSecret,
+      this.mockCrlList,
+    );
   }
 
   getSavedMusterSnapshots() {

@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   NotificationMessage,
   NotificationTemplateEngine,
@@ -7,7 +11,11 @@ import {
   WebPushChannelDispatcher,
   ChannelDispatcher,
 } from '@umbral/core';
-import { DispatchNotificationDto, TestChannelDto, GetNotificationLogsDto } from './dto/notifications.dto';
+import {
+  DispatchNotificationDto,
+  TestChannelDto,
+  GetNotificationLogsDto,
+} from './dto/notifications.dto';
 
 export interface NotificationLogRecord {
   id: string;
@@ -42,14 +50,16 @@ export class NotificationsService {
     const idempotencyKey = NotificationMessage.generateIdempotencyKey(
       dto.alertId,
       dto.recipientTarget,
-      dto.channel
+      dto.channel,
     );
 
     // Idempotency check: verify whether notification was already sent or queued
-    const existing = this.notificationLogs.find((l) => l.idempotencyKey === idempotencyKey);
+    const existing = this.notificationLogs.find(
+      (l) => l.idempotencyKey === idempotencyKey,
+    );
     if (existing) {
       throw new ConflictException(
-        `Notification for alert '${dto.alertId}' to target '${dto.recipientTarget}' on channel '${dto.channel}' already exists.`
+        `Notification for alert '${dto.alertId}' to target '${dto.recipientTarget}' on channel '${dto.channel}' already exists.`,
       );
     }
 
@@ -73,7 +83,11 @@ export class NotificationsService {
     let message = createRes.value;
 
     // Render template
-    const renderRes = this.templateEngine.render(dto.templateId, locale, dto.payload);
+    const renderRes = this.templateEngine.render(
+      dto.templateId,
+      locale,
+      dto.payload,
+    );
     if (renderRes.isErr()) {
       throw new BadRequestException(renderRes.error.message);
     }
@@ -82,7 +96,9 @@ export class NotificationsService {
     // Select channel dispatcher
     const dispatcher = this.dispatchers[dto.channel];
     if (!dispatcher) {
-      throw new BadRequestException(`Unsupported notification channel: ${dto.channel}`);
+      throw new BadRequestException(
+        `Unsupported notification channel: ${dto.channel}`,
+      );
     }
 
     // Dispatch via channel
@@ -170,14 +186,24 @@ export class NotificationsService {
   }
 
   async retryFailedNotifications() {
-    const failedRecords = this.notificationLogs.filter((l) => l.status === 'retrying' || l.status === 'failed');
-    const retriedResults: Array<{ id: string; success: boolean; status: string }> = [];
+    const failedRecords = this.notificationLogs.filter(
+      (l) => l.status === 'retrying' || l.status === 'failed',
+    );
+    const retriedResults: Array<{
+      id: string;
+      success: boolean;
+      status: string;
+    }> = [];
 
     for (const record of failedRecords) {
       const dispatcher = this.dispatchers[record.channel];
       if (!dispatcher) continue;
 
-      const renderRes = this.templateEngine.render(record.templateId, record.locale as any, record.payload);
+      const renderRes = this.templateEngine.render(
+        record.templateId,
+        record.locale as any,
+        record.payload,
+      );
       if (renderRes.isErr()) continue;
 
       const { subject, body } = renderRes.value;

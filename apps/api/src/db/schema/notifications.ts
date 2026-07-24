@@ -17,7 +17,9 @@ export const notificationLogs = pgTable(
     recipientTarget: varchar('recipient_target', { length: 128 }).notNull(),
     locale: varchar('locale', { length: 8 }).notNull().default('es'),
     templateId: varchar('template_id', { length: 64 }).notNull(),
-    idempotencyKey: varchar('idempotency_key', { length: 255 }).notNull().unique(),
+    idempotencyKey: varchar('idempotency_key', { length: 255 })
+      .notNull()
+      .unique(),
     status: varchar('status', { length: 32 }).notNull().default('queued'),
     retryCount: integer('retry_count').notNull().default(0),
     errorDetails: varchar('error_details', { length: 255 }),
@@ -27,7 +29,9 @@ export const notificationLogs = pgTable(
   },
   (table) => ({
     alertIdIdx: index('idx_notification_logs_alert_id').on(table.alertId),
-    idempotencyIdx: index('idx_notification_logs_idempotency').on(table.idempotencyKey),
+    idempotencyIdx: index('idx_notification_logs_idempotency').on(
+      table.idempotencyKey,
+    ),
     statusIdx: index('idx_notification_logs_status').on(table.status),
-  })
+  }),
 );

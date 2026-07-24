@@ -39,10 +39,3 @@ import { HrisSyncModule } from './modules/hris-sync/hris-sync.module';
   providers: [AppService],
 })
 export class AppModule {}
-
-
-
-
-
-
-

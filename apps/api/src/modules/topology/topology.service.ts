@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   Site,
   Zone,
@@ -90,10 +95,14 @@ export class TopologyService {
     if (dto.parentId) {
       const parentZone = this.zonesMap.get(dto.parentId);
       if (!parentZone) {
-        throw new NotFoundException(`Parent zone not found with ID: ${dto.parentId}`);
+        throw new NotFoundException(
+          `Parent zone not found with ID: ${dto.parentId}`,
+        );
       }
       if (parentZone.siteId !== dto.siteId) {
-        throw new BadRequestException('Parent zone must belong to the same site');
+        throw new BadRequestException(
+          'Parent zone must belong to the same site',
+        );
       }
     }
 
@@ -124,10 +133,10 @@ export class TopologyService {
     const lpRes = LockProfile.create({
       id,
       name: dto.name,
-      actuationMode: dto.actuationMode as LockActuationMode,
+      actuationMode: dto.actuationMode,
       pulseDurationMs: dto.pulseDurationMs,
       unlockWindowMs: dto.unlockWindowMs,
-      failState: dto.failState as FailState,
+      failState: dto.failState,
       relayInverted: dto.relayInverted,
       hasDoorPositionSensor: dto.hasDoorPositionSensor,
       hasRexInput: dto.hasRexInput,
@@ -152,10 +161,14 @@ export class TopologyService {
   }
 
   // Dual Approval Workflow for Life-Safety Lock Profile Changes
-  public proposeLockProfileChange(dto: ProposeLifeSafetyChangeDto): ConfigVersionRecord {
+  public proposeLockProfileChange(
+    dto: ProposeLifeSafetyChangeDto,
+  ): ConfigVersionRecord {
     const existing = this.lockProfilesMap.get(dto.lockProfileId);
     if (!existing) {
-      throw new NotFoundException(`LockProfile not found: ${dto.lockProfileId}`);
+      throw new NotFoundException(
+        `LockProfile not found: ${dto.lockProfileId}`,
+      );
     }
 
     const isLifeSafetyFieldTouched =
@@ -186,45 +199,62 @@ export class TopologyService {
     return versionRecord;
   }
 
-  public approveLockProfileChange(dto: ApproveLifeSafetyChangeDto): ConfigVersionRecord {
+  public approveLockProfileChange(
+    dto: ApproveLifeSafetyChangeDto,
+  ): ConfigVersionRecord {
     const version = this.configVersions.find((v) => v.id === dto.versionId);
     if (!version) {
       throw new NotFoundException(`Version record not found: ${dto.versionId}`);
     }
 
     if (version.status !== 'pending_approval') {
-      throw new BadRequestException(`Version record is not pending approval (current status: ${version.status})`);
+      throw new BadRequestException(
+        `Version record is not pending approval (current status: ${version.status})`,
+      );
     }
 
     if (version.changedBy === dto.approver) {
-      throw new ForbiddenException('Life-safety dual approval requires a second distinct approver');
+      throw new ForbiddenException(
+        'Life-safety dual approval requires a second distinct approver',
+      );
     }
 
     version.approvedBy = dto.approver;
     version.status = 'applied';
 
-    this.applyLockProfileUpdate(version.entityId, version.payload as any);
+    this.applyLockProfileUpdate(version.entityId, version.payload);
 
     return version;
   }
 
-  private applyLockProfileUpdate(id: string, changes: Partial<CreateLockProfileDto>): LockProfile {
+  private applyLockProfileUpdate(
+    id: string,
+    changes: Partial<CreateLockProfileDto>,
+  ): LockProfile {
     const existing = this.lockProfilesMap.get(id);
     if (!existing) throw new NotFoundException(`LockProfile not found: ${id}`);
 
     const updatedRes = LockProfile.create({
       id: existing.id,
       name: changes.name ?? existing.name,
-      actuationMode: (changes.actuationMode as LockActuationMode) ?? existing.actuationMode,
+      actuationMode:
+        (changes.actuationMode as LockActuationMode) ?? existing.actuationMode,
       pulseDurationMs: changes.pulseDurationMs ?? existing.pulseDurationMs,
       unlockWindowMs: changes.unlockWindowMs ?? existing.unlockWindowMs,
       failState: (changes.failState as FailState) ?? existing.failState,
       relayInverted: changes.relayInverted ?? existing.relayInverted,
-      hasDoorPositionSensor: changes.hasDoorPositionSensor ?? existing.hasDoorPositionSensor,
+      hasDoorPositionSensor:
+        changes.hasDoorPositionSensor ?? existing.hasDoorPositionSensor,
       hasRexInput: changes.hasRexInput ?? existing.hasRexInput,
       hasTamperInput: changes.hasTamperInput ?? existing.hasTamperInput,
-      heldOpenTimeoutSec: changes.heldOpenTimeoutSec !== undefined ? changes.heldOpenTimeoutSec : existing.heldOpenTimeoutSec,
-      heldOpenPrewarnSec: changes.heldOpenPrewarnSec !== undefined ? changes.heldOpenPrewarnSec : existing.heldOpenPrewarnSec,
+      heldOpenTimeoutSec:
+        changes.heldOpenTimeoutSec !== undefined
+          ? changes.heldOpenTimeoutSec
+          : existing.heldOpenTimeoutSec,
+      heldOpenPrewarnSec:
+        changes.heldOpenPrewarnSec !== undefined
+          ? changes.heldOpenPrewarnSec
+          : existing.heldOpenPrewarnSec,
       rexGraceSec: changes.rexGraceSec ?? existing.rexGraceSec,
       isEgressRoute: changes.isEgressRoute ?? existing.isEgressRoute,
       releasesOnFire: changes.releasesOnFire ?? existing.releasesOnFire,
@@ -268,18 +298,26 @@ export class TopologyService {
   }
 
   // Doors
-  public createDoor(dto: CreateDoorDto): { door: Door; hierarchicalName: string } {
+  public createDoor(dto: CreateDoorDto): {
+    door: Door;
+    hierarchicalName: string;
+  } {
     const site = this.sitesMap.get(dto.siteId);
     if (!site) throw new NotFoundException(`Site not found: ${dto.siteId}`);
 
     const controller = this.controllersMap.get(dto.controllerId);
-    if (!controller) throw new NotFoundException(`Controller not found: ${dto.controllerId}`);
+    if (!controller)
+      throw new NotFoundException(`Controller not found: ${dto.controllerId}`);
 
     const lockProfile = this.lockProfilesMap.get(dto.lockProfileId);
-    if (!lockProfile) throw new NotFoundException(`LockProfile not found: ${dto.lockProfileId}`);
+    if (!lockProfile)
+      throw new NotFoundException(
+        `LockProfile not found: ${dto.lockProfileId}`,
+      );
 
     const zoneInside = this.zonesMap.get(dto.zoneInsideId);
-    if (!zoneInside) throw new NotFoundException(`Zone not found: ${dto.zoneInsideId}`);
+    if (!zoneInside)
+      throw new NotFoundException(`Zone not found: ${dto.zoneInsideId}`);
 
     const id = makeDoorId(`door-${cryptoNativeOrRandomUUID()}`);
     const doorRes = Door.create({
@@ -301,9 +339,16 @@ export class TopologyService {
     const door = doorRes.value;
     this.doorsMap.set(door.id, door);
 
-    this.simulatorAdapter.registerVirtualDoor(door.id, controller.id, lockProfile);
+    this.simulatorAdapter.registerVirtualDoor(
+      door.id,
+      controller.id,
+      lockProfile,
+    );
 
-    const hierarchicalName = door.getHierarchicalName(site.code, zoneInside.name);
+    const hierarchicalName = door.getHierarchicalName(
+      site.code,
+      zoneInside.name,
+    );
 
     return { door, hierarchicalName };
   }
@@ -314,7 +359,10 @@ export class TopologyService {
       const zone = this.zonesMap.get(d.zoneInsideId);
       return {
         door: d,
-        hierarchicalName: d.getHierarchicalName(site?.code || 'SITE', zone?.name || 'ZONE'),
+        hierarchicalName: d.getHierarchicalName(
+          site?.code || 'SITE',
+          zone?.name || 'ZONE',
+        ),
       };
     });
   }
@@ -329,7 +377,7 @@ export class TopologyService {
       id,
       doorId: makeDoorId(dto.doorId),
       name: dto.name,
-      protocol: dto.protocol as ReaderProtocol,
+      protocol: dto.protocol,
       direction: dto.direction,
       riskAcceptedBy: dto.riskAcceptedBy,
       riskAcceptedAt: dto.riskAcceptedBy ? new Date() : null,
@@ -363,10 +411,13 @@ export class TopologyService {
   public importConfig(schema: any) {
     const res = importTopologyConfig(schema);
     if (res.isErr()) {
-      throw new BadRequestException(`Import failed due to domain invariant violation: ${res.error.message}`);
+      throw new BadRequestException(
+        `Import failed due to domain invariant violation: ${res.error.message}`,
+      );
     }
 
-    const { sites, zones, lockProfiles, controllers, doors, readers } = res.value;
+    const { sites, zones, lockProfiles, controllers, doors, readers } =
+      res.value;
 
     this.sitesMap.clear();
     sites.forEach((s) => this.sitesMap.set(s.id, s));

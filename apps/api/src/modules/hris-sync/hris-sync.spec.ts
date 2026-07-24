@@ -20,13 +20,15 @@ EMP-100,1788776655,Veronica,Salazar,veronica@example.com,employee,site-main,ACTI
       expect(batch.summary.createdCount).toBe(1);
 
       const persons = controller.getPersons();
-      const veronica = persons.find(p => p.externalRef === 'EMP-100');
+      const veronica = persons.find((p) => p.externalRef === 'EMP-100');
       expect(veronica).toBeDefined();
       expect(veronica?.firstName).toBe('Veronica');
     });
 
     it('triggers batch execution from folder watcher', () => {
-      const batch = controller.triggerBatch({ sourceName: 'hris-drop-folder.csv' });
+      const batch = controller.triggerBatch({
+        sourceName: 'hris-drop-folder.csv',
+      });
       expect(batch.filename).toBe('hris-drop-folder.csv');
       expect(batch.summary.totalProcessed).toBe(2);
     });
@@ -52,7 +54,9 @@ EMP-001,1712345678,Carlos,Mendoza,carlos@example.com,employee,site-main,TERMINAT
       expect(batch.summary.terminatedCount).toBe(1);
 
       const periods = service.getEmploymentPeriods();
-      const carlosPeriod = periods.find(ep => ep.personId === 'person-hris-EMP-001');
+      const carlosPeriod = periods.find(
+        (ep) => ep.personId === 'person-hris-EMP-001',
+      );
       expect(carlosPeriod?.validUntil).not.toBeNull();
     });
   });

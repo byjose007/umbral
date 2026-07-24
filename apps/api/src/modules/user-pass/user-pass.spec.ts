@@ -2,10 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserPassController } from './user-pass.controller';
 import { UserPassService } from './user-pass.service';
-import {
-  generateUserPassToken,
-  generateVisitorPassToken,
-} from '@umbral/core';
+import { generateUserPassToken, generateVisitorPassToken } from '@umbral/core';
 import {
   UnauthorizedException,
   NotFoundException,
@@ -54,7 +51,9 @@ describe('UserPassModule', () => {
   });
 
   it('rejects login without personId or pinHash', () => {
-    expect(() => controller.login({ personId: '', pinHash: '' })).toThrow(UnauthorizedException);
+    expect(() => controller.login({ personId: '', pinHash: '' })).toThrow(
+      UnauthorizedException,
+    );
   });
 
   it('retrieves seed via GET seed/:personId after login', () => {
@@ -66,7 +65,9 @@ describe('UserPassModule', () => {
   });
 
   it('throws NotFoundException when getting seed for unknown person', () => {
-    expect(() => controller.getSeed('unknown-person-999')).toThrow(NotFoundException);
+    expect(() => controller.getSeed('unknown-person-999')).toThrow(
+      NotFoundException,
+    );
   });
 
   // ─── Token Verification ─────────────────────────────────────────────────────
@@ -110,8 +111,8 @@ describe('UserPassModule', () => {
 
     const history = controller.getAccessHistory(personId);
     expect(history).toHaveLength(2);
-    expect(history[0]!.doorLabel).toBe('Parking B1'); // most recent first
-    expect(history[1]!.doorLabel).toBe('Lobby Main');
+    expect(history[0].doorLabel).toBe('Parking B1'); // most recent first
+    expect(history[1].doorLabel).toBe('Lobby Main');
   });
 
   // ─── Visitor Pass Issuance ─────────────────────────────────────────────────
@@ -161,7 +162,13 @@ describe('UserPassModule', () => {
     const validFrom = now.toISOString();
     const validTo = new Date(now.getTime() + 3600 * 1000).toISOString();
 
-    controller.issueVisitorPass({ issuerPersonId: personId, visitorName: 'Ana Activa', validFrom, validTo, maxUses: 1 });
+    controller.issueVisitorPass({
+      issuerPersonId: personId,
+      visitorName: 'Ana Activa',
+      validFrom,
+      validTo,
+      maxUses: 1,
+    });
 
     const active = controller.getVisitorPasses(personId, 'active');
     expect(active).toHaveLength(1);

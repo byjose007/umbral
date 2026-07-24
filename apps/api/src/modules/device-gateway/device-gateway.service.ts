@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import {
   makeControllerId,
   eventsTopic,
@@ -35,7 +40,10 @@ export interface DeviceHealthInternal {
 
 @Injectable()
 export class DeviceGatewayService {
-  private readonly provisioningMap = new Map<string, DeviceProvisioningInternal>();
+  private readonly provisioningMap = new Map<
+    string,
+    DeviceProvisioningInternal
+  >();
   private readonly dedupEventSet = new Set<string>();
   private readonly healthLogsMap = new Map<string, DeviceHealthInternal>();
 
@@ -43,7 +51,9 @@ export class DeviceGatewayService {
   public provisionDevice(dto: ProvisionDeviceDto) {
     const existing = this.provisioningMap.get(dto.controllerId);
     if (existing && existing.status === 'active') {
-      throw new BadRequestException(`Controller ${dto.controllerId} is already provisioned`);
+      throw new BadRequestException(
+        `Controller ${dto.controllerId} is already provisioned`,
+      );
     }
 
     const record: DeviceProvisioningInternal = {
@@ -61,7 +71,9 @@ export class DeviceGatewayService {
   public revokeCertificate(dto: RevokeCertificateDto) {
     const record = this.provisioningMap.get(dto.controllerId);
     if (!record) {
-      throw new NotFoundException(`Controller ${dto.controllerId} not provisioned`);
+      throw new NotFoundException(
+        `Controller ${dto.controllerId} not provisioned`,
+      );
     }
 
     record.status = 'revoked';
@@ -73,7 +85,9 @@ export class DeviceGatewayService {
   public getMQTTTopics(controllerId: string) {
     const record = this.provisioningMap.get(controllerId);
     if (!record || record.status === 'revoked') {
-      throw new ForbiddenException(`Access denied: Controller ${controllerId} certificate is missing or revoked`);
+      throw new ForbiddenException(
+        `Access denied: Controller ${controllerId} certificate is missing or revoked`,
+      );
     }
 
     return {
@@ -88,7 +102,9 @@ export class DeviceGatewayService {
   public ingestEvent(dto: IngestEventDto) {
     const record = this.provisioningMap.get(dto.controllerId);
     if (!record || record.status === 'revoked') {
-      throw new ForbiddenException(`Event rejected: Controller ${dto.controllerId} certificate missing or revoked`);
+      throw new ForbiddenException(
+        `Event rejected: Controller ${dto.controllerId} certificate missing or revoked`,
+      );
     }
 
     if (this.dedupEventSet.has(dto.eventId)) {
@@ -111,17 +127,24 @@ export class DeviceGatewayService {
   }
 
   // Heartbeat & Health Monitoring
-  public recordHeartbeat(dto: HeartbeatDto, currentServerMatrixVersion = 1, at: Date = new Date()) {
+  public recordHeartbeat(
+    dto: HeartbeatDto,
+    currentServerMatrixVersion = 1,
+    at: Date = new Date(),
+  ) {
     const record = this.provisioningMap.get(dto.controllerId);
     if (!record || record.status === 'revoked') {
-      throw new ForbiddenException(`Heartbeat rejected: Controller ${dto.controllerId} certificate missing or revoked`);
+      throw new ForbiddenException(
+        `Heartbeat rejected: Controller ${dto.controllerId} certificate missing or revoked`,
+      );
     }
 
     const serverTimeMs = at.getTime();
     const clockDriftMs = Math.abs(serverTimeMs - dto.deviceTimestamp);
     const clockDriftExceeded = clockDriftMs > 2000;
 
-    const isMatrixUpToDate = dto.appliedMatrixVersion >= currentServerMatrixVersion;
+    const isMatrixUpToDate =
+      dto.appliedMatrixVersion >= currentServerMatrixVersion;
 
     const healthRecord: DeviceHealthInternal = {
       controllerId: dto.controllerId,
@@ -148,7 +171,12 @@ export class DeviceGatewayService {
     };
   }
 
-  public getDeviceHealth(controllerId: string, currentServerMatrixVersion = 1, at: Date = new Date(), offlineThresholdMs = 30000) {
+  public getDeviceHealth(
+    controllerId: string,
+    currentServerMatrixVersion = 1,
+    at: Date = new Date(),
+    offlineThresholdMs = 30000,
+  ) {
     const record = this.provisioningMap.get(controllerId);
     if (!record) {
       throw new NotFoundException(`Controller ${controllerId} not found`);
@@ -169,7 +197,8 @@ export class DeviceGatewayService {
       };
     }
 
-    const timeSinceLastHeartbeat = at.getTime() - health.lastHeartbeatAt.getTime();
+    const timeSinceLastHeartbeat =
+      at.getTime() - health.lastHeartbeatAt.getTime();
     const isOnline = timeSinceLastHeartbeat <= offlineThresholdMs;
 
     return {
@@ -180,8 +209,10 @@ export class DeviceGatewayService {
       clockDriftMs: health.clockDriftMs,
       clockDriftExceeded: health.clockDriftMs > 2000,
       appliedMatrixVersion: health.appliedMatrixVersion,
-      isMatrixUpToDate: health.appliedMatrixVersion >= currentServerMatrixVersion,
-      requiresMatrixPush: health.appliedMatrixVersion < currentServerMatrixVersion,
+      isMatrixUpToDate:
+        health.appliedMatrixVersion >= currentServerMatrixVersion,
+      requiresMatrixPush:
+        health.appliedMatrixVersion < currentServerMatrixVersion,
     };
   }
 }

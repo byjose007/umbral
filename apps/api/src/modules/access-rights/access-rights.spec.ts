@@ -57,9 +57,7 @@ describe('AccessRightsModule', () => {
       siteId,
       name: 'Acceso Oficina Central',
       description: 'Puerta Principal en Horario Oficina',
-      entries: [
-        { doorId: 'door-main', scheduleId: schedule.id },
-      ],
+      entries: [{ doorId: 'door-main', scheduleId: schedule.id }],
     });
     expect(accessLevel.entries.length).toBe(1);
 

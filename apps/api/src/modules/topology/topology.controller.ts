@@ -98,14 +98,16 @@ export class TopologyController {
   async grantAccess(@Body() dto: GrantAccessDto) {
     await this.topologyService.simulatorAdapter.grantAccess(
       makeDoorId(dto.doorId),
-      dto.durationMs
+      dto.durationMs,
     );
     return { success: true, doorId: dto.doorId };
   }
 
   @Post('simulator/forced-open/:doorId')
   simulateForcedOpen(@Param('doorId') doorId: string) {
-    this.topologyService.simulatorAdapter.simulateForcedOpen(makeDoorId(doorId));
+    this.topologyService.simulatorAdapter.simulateForcedOpen(
+      makeDoorId(doorId),
+    );
     return { success: true, doorId, event: 'door.forced_open' };
   }
 

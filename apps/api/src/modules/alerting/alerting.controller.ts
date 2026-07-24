@@ -32,7 +32,7 @@ export class AlertingController {
     @Query('siteId') siteId?: string,
     @Query('severity') severity?: EventSeverity,
     @Query('status') status?: string,
-    @Query('limit') limit?: string
+    @Query('limit') limit?: string,
   ) {
     return this.alertingService.getAlerts({
       siteId,

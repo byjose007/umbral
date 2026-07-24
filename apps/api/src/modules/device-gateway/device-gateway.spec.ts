@@ -34,17 +34,24 @@ describe('DeviceGatewayModule', () => {
     expect(prov.status).toBe('active');
 
     const topics = controller.getMQTTTopics(controllerId);
-    expect(topics.eventsTopic).toBe(`umbral/v1/controllers/${controllerId}/events`);
+    expect(topics.eventsTopic).toBe(
+      `umbral/v1/controllers/${controllerId}/events`,
+    );
 
     // Revoke certificate
     controller.revokeCertificate({ controllerId });
 
-    expect(() => controller.getMQTTTopics(controllerId)).toThrow(ForbiddenException);
+    expect(() => controller.getMQTTTopics(controllerId)).toThrow(
+      ForbiddenException,
+    );
   });
 
   it('deduplicates incoming events by event_id idempotently', () => {
     const controllerId = 'ctrl-202';
-    controller.provisionDevice({ controllerId, certificateThumbprint: 'THUMB-202' });
+    controller.provisionDevice({
+      controllerId,
+      certificateThumbprint: 'THUMB-202',
+    });
 
     const eventPayload = {
       eventId: 'evt-uuid-1001',
@@ -66,7 +73,10 @@ describe('DeviceGatewayModule', () => {
 
   it('detects clock drift > 2000 ms and triggers matrix push when version is behind', () => {
     const controllerId = 'ctrl-303';
-    controller.provisionDevice({ controllerId, certificateThumbprint: 'THUMB-303' });
+    controller.provisionDevice({
+      controllerId,
+      certificateThumbprint: 'THUMB-303',
+    });
 
     const serverNow = Date.now();
     const deviceTimeWithDrift = serverNow - 3500; // 3.5s drift
@@ -78,7 +88,7 @@ describe('DeviceGatewayModule', () => {
         firmwareVersion: '1.2.0',
         deviceTimestamp: deviceTimeWithDrift,
       },
-      '2' // Server matrix is at version 2!
+      '2', // Server matrix is at version 2!
     );
 
     expect(hbResult.clockDriftExceeded).toBe(true); // > 2000 ms
@@ -87,7 +97,10 @@ describe('DeviceGatewayModule', () => {
 
   it('emits device.offline status when heartbeat timeout is exceeded', () => {
     const controllerId = 'ctrl-404';
-    controller.provisionDevice({ controllerId, certificateThumbprint: 'THUMB-404' });
+    controller.provisionDevice({
+      controllerId,
+      certificateThumbprint: 'THUMB-404',
+    });
 
     // No heartbeat recorded yet
     const health = controller.getDeviceHealth(controllerId, '1');

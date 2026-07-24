@@ -65,7 +65,10 @@ export class HrisSyncService {
     }
   }
 
-  public importCsv(dto: ImportCsvDto, filename: string = 'manual-upload.csv'): HrisImportBatchRecord {
+  public importCsv(
+    dto: ImportCsvDto,
+    filename: string = 'manual-upload.csv',
+  ): HrisImportBatchRecord {
     if (!dto.csvContent || dto.csvContent.trim().length === 0) {
       throw new BadRequestException('CSV content cannot be empty');
     }
@@ -75,7 +78,7 @@ export class HrisSyncService {
     const reconcileResult = HrisReconciler.reconcile(
       parseResult.validRecords,
       this.existingPersons,
-      this.existingEmploymentPeriods
+      this.existingEmploymentPeriods,
     );
 
     // Update in-memory state

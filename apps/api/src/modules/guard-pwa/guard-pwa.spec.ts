@@ -74,7 +74,7 @@ describe('GuardPwaModule', () => {
   it('should return active pseudonymous alerts', () => {
     const alerts = controller.getActiveAlerts('SITE-MAIN');
     expect(alerts.length).toBe(2);
-    expect(alerts[0]!.pseudonym).toBe('USR-A9F32');
+    expect(alerts[0].pseudonym).toBe('USR-A9F32');
   });
 
   it('should verify QR token using service', () => {

@@ -81,8 +81,16 @@ describe('Topology Module (NestJS API)', () => {
     });
 
     it('enforces Wiegand signed risk acceptance in NestJS layer', () => {
-      const site = controller.createSite({ code: 'TCH2', name: 'Site 2', timezone: 'UTC' });
-      const zone = controller.createZone({ siteId: site.id, code: 'Z1', name: 'Zone 1' });
+      const site = controller.createSite({
+        code: 'TCH2',
+        name: 'Site 2',
+        timezone: 'UTC',
+      });
+      const zone = controller.createZone({
+        siteId: site.id,
+        code: 'Z1',
+        name: 'Zone 1',
+      });
       const lp = controller.createLockProfile({
         name: 'LP 1',
         actuationMode: 'pulse',
@@ -92,7 +100,11 @@ describe('Topology Module (NestJS API)', () => {
         isEgressRoute: false,
         releasesOnFire: false,
       });
-      const ctrl = controller.createController({ siteId: site.id, name: 'C1', ipAddress: '10.0.0.1' });
+      const ctrl = controller.createController({
+        siteId: site.id,
+        name: 'C1',
+        ipAddress: '10.0.0.1',
+      });
       const doorRes = controller.createDoor({
         siteId: site.id,
         controllerId: ctrl.id,
@@ -107,7 +119,7 @@ describe('Topology Module (NestJS API)', () => {
           name: 'Lector Wiegand Inseguro',
           protocol: 'wiegand',
           direction: 'in',
-        })
+        }),
       ).toThrow(BadRequestException);
 
       const validReader = controller.createReader({
@@ -150,7 +162,7 @@ describe('Topology Module (NestJS API)', () => {
         controller.approveLockProfileChange({
           versionId: proposal.id,
           approver: 'admin-alice@umbral.com',
-        })
+        }),
       ).toThrow(ForbiddenException);
 
       const approved = controller.approveLockProfileChange({
@@ -165,8 +177,16 @@ describe('Topology Module (NestJS API)', () => {
 
   describe('Simulator Controller Operation', () => {
     it('executes virtual door unlock and emits raw device events', async () => {
-      const site = controller.createSite({ code: 'SIM', name: 'Sim Site', timezone: 'UTC' });
-      const zone = controller.createZone({ siteId: site.id, code: 'SZ', name: 'Sim Zone' });
+      const site = controller.createSite({
+        code: 'SIM',
+        name: 'Sim Site',
+        timezone: 'UTC',
+      });
+      const zone = controller.createZone({
+        siteId: site.id,
+        code: 'SZ',
+        name: 'Sim Zone',
+      });
       const lp = controller.createLockProfile({
         name: 'Sim LP',
         actuationMode: 'pulse',
@@ -177,7 +197,11 @@ describe('Topology Module (NestJS API)', () => {
         isEgressRoute: false,
         releasesOnFire: false,
       });
-      const ctrl = controller.createController({ siteId: site.id, name: 'Sim Ctrl', ipAddress: '127.0.0.1' });
+      const ctrl = controller.createController({
+        siteId: site.id,
+        name: 'Sim Ctrl',
+        ipAddress: '127.0.0.1',
+      });
       const doorRes = controller.createDoor({
         siteId: site.id,
         controllerId: ctrl.id,
@@ -187,10 +211,15 @@ describe('Topology Module (NestJS API)', () => {
       });
 
       const eventPromise = firstValueFrom(
-        service.simulatorAdapter.events$.pipe(filter((e) => e.eventType === 'door.opened'))
+        service.simulatorAdapter.events$.pipe(
+          filter((e) => e.eventType === 'door.opened'),
+        ),
       );
 
-      const result = await controller.grantAccess({ doorId: doorRes.door.id, durationMs: 1000 });
+      const result = await controller.grantAccess({
+        doorId: doorRes.door.id,
+        durationMs: 1000,
+      });
       expect(result.success).toBe(true);
 
       const event = await eventPromise;
@@ -201,8 +230,16 @@ describe('Topology Module (NestJS API)', () => {
 
   describe('Topology JSON Export / Import', () => {
     it('exports topology and re-imports successfully', () => {
-      const site = controller.createSite({ code: 'EXP', name: 'Export Site', timezone: 'UTC' });
-      const zone = controller.createZone({ siteId: site.id, code: 'EZ', name: 'Export Zone' });
+      const site = controller.createSite({
+        code: 'EXP',
+        name: 'Export Site',
+        timezone: 'UTC',
+      });
+      const zone = controller.createZone({
+        siteId: site.id,
+        code: 'EZ',
+        name: 'Export Zone',
+      });
       const lp = controller.createLockProfile({
         name: 'Export LP',
         actuationMode: 'pulse',
@@ -212,7 +249,11 @@ describe('Topology Module (NestJS API)', () => {
         isEgressRoute: false,
         releasesOnFire: false,
       });
-      const ctrl = controller.createController({ siteId: site.id, name: 'Export Ctrl', ipAddress: '10.0.0.5' });
+      const ctrl = controller.createController({
+        siteId: site.id,
+        name: 'Export Ctrl',
+        ipAddress: '10.0.0.5',
+      });
       controller.createDoor({
         siteId: site.id,
         controllerId: ctrl.id,

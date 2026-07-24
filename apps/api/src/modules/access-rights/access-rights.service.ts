@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   Schedule,
   HolidayCalendar,
@@ -28,7 +32,10 @@ export class AccessRightsService {
   private readonly schedulesMap = new Map<string, Schedule>();
   private readonly accessLevelsMap = new Map<string, AccessLevel>();
   private readonly groupsMap = new Map<string, Group>();
-  private readonly personAssignmentsMap = new Map<string, PersonGroupAssignment[]>();
+  private readonly personAssignmentsMap = new Map<
+    string,
+    PersonGroupAssignment[]
+  >();
 
   // Holiday Calendars
   public createHolidayCalendar(dto: CreateHolidayCalendarDto) {
@@ -69,7 +76,9 @@ export class AccessRightsService {
       siteId: makeSiteId(dto.siteId),
       name: dto.name,
       windows: dto.windows,
-      holidayCalendarId: dto.holidayCalendarId ? makeHolidayCalendarId(dto.holidayCalendarId) : null,
+      holidayCalendarId: dto.holidayCalendarId
+        ? makeHolidayCalendarId(dto.holidayCalendarId)
+        : null,
       holidayBehavior: dto.holidayBehavior ?? 'block_all',
     });
 

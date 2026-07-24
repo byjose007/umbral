@@ -21,7 +21,7 @@ export const UserAccessLevelInputSchema = z.object({
     z.object({
       doorId: z.string().min(1),
       windows: z.array(ScheduleWindowSchema),
-    })
+    }),
   ),
 });
 
@@ -41,7 +41,9 @@ export const EvaluateDecisionSchema = z.object({
   readerZoneInsideId: z.string().optional().nullable(),
   localState: z.object({
     matrix: z.any(),
-    offlineMode: z.enum(['cached', 'deny_all', 'allow_known', 'unlocked']).default('cached'),
+    offlineMode: z
+      .enum(['cached', 'deny_all', 'allow_known', 'unlocked'])
+      .default('cached'),
     isOffline: z.boolean().default(false),
     apbMode: z.enum(['off', 'soft', 'hard', 'timed']).optional(),
     apbResetSec: z.number().optional(),

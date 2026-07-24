@@ -1,6 +1,11 @@
 import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service.js';
-import { QueryFlowAggregatesDto, QueryTrajectoryDto, SaveFilterDto, ExportReportDto } from './dto/analytics.dto.js';
+import {
+  QueryFlowAggregatesDto,
+  QueryTrajectoryDto,
+  SaveFilterDto,
+  ExportReportDto,
+} from './dto/analytics.dto.js';
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -33,7 +38,10 @@ export class AnalyticsController {
   // --- TRAJECTORY TRACKING ---
 
   @Post('trajectory/:personId')
-  getPersonTrajectory(@Param('personId') personId: string, @Body() dto: QueryTrajectoryDto) {
+  getPersonTrajectory(
+    @Param('personId') personId: string,
+    @Body() dto: QueryTrajectoryDto,
+  ) {
     return this.analyticsService.getPersonTrajectory(personId, dto);
   }
 

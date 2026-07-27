@@ -39,12 +39,10 @@ interface VisitorPassRecord {
 @Component({
   selector: 'app-user-pass',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent],
+  imports: [CommonModule, FormsModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
-    <ion-page>
-      <ion-content [fullscreen]="true" [scrollY]="false">
-        <div class="pwa-shell" [class.duress-mode]="passMode() === 'duress'">
+    <div class="pwa-shell" [class.duress-mode]="passMode() === 'duress'">
 
           <!-- ───── LOGIN GATE ─────────────────────────────────────────── -->
           @if (!isAuthenticated()) {
@@ -296,8 +294,6 @@ interface VisitorPassRecord {
 
           } <!-- end isAuthenticated -->
         </div>
-      </ion-content>
-    </ion-page>
   `,
   styles: [`
     .pwa-shell {

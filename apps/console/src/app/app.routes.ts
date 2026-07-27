@@ -13,12 +13,5 @@ export const routes: Routes = [
         (m) => m.TopologyConsoleComponent
       ),
   },
-  {
-    path: 'user-pass',
-    loadComponent: () =>
-      import('./user-pass/user-pass-pwa.component').then(
-        (m) => m.UserPassPwaComponent
-      ),
-  },
 ];
 

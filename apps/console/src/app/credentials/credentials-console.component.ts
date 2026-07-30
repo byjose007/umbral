@@ -87,8 +87,8 @@ export interface CredentialView {
     .credentials-container {
       padding: 1.5rem;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #0f172a;
-      color: #f8fafc;
+      background-color: var(--umbral-bg);
+      color: var(--umbral-text);
       min-height: 100vh;
     }
 
@@ -97,13 +97,13 @@ export interface CredentialView {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1.5rem;
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid var(--umbral-surface);
       padding-bottom: 1rem;
     }
 
     .status-pill.secure {
-      background-color: #1e3a8a;
-      color: #93c5fd;
+      background-color: var(--umbral-surface-2);
+      color: var(--umbral-teal);
       padding: 0.4rem 0.8rem;
       border-radius: 9999px;
       font-size: 0.875rem;
@@ -117,20 +117,20 @@ export interface CredentialView {
     }
 
     .card {
-      background-color: #1e293b;
+      background-color: var(--umbral-surface);
       border-radius: 0.75rem;
       padding: 1.25rem;
-      border: 1px solid #334155;
+      border: 1px solid var(--umbral-border);
     }
 
     h1, h2, h3 {
       margin-top: 0;
-      color: #f1f5f9;
+      color: var(--umbral-text);
     }
 
     .credential-item {
-      background-color: #0f172a;
-      border: 1px solid #334155;
+      background-color: var(--umbral-bg);
+      border: 1px solid var(--umbral-border);
       padding: 1rem;
       border-radius: 0.5rem;
       margin-bottom: 0.75rem;
@@ -139,7 +139,7 @@ export interface CredentialView {
       align-items: center;
 
       &.blocked {
-        border-color: #ef4444;
+        border-color: var(--umbral-danger);
       }
     }
 
@@ -151,18 +151,18 @@ export interface CredentialView {
 
     .person-name {
       font-weight: 600;
-      color: #f8fafc;
+      color: var(--umbral-text);
     }
 
     .type-tag {
       font-size: 0.8rem;
-      color: #38bdf8;
+      color: var(--umbral-teal);
       font-weight: 600;
     }
 
     .hash-preview {
       font-size: 0.8rem;
-      color: #94a3b8;
+      color: var(--umbral-text-muted);
     }
 
     .badge {
@@ -175,17 +175,17 @@ export interface CredentialView {
     }
 
     .badge.active {
-      background-color: #064e3b;
-      color: #6ee7b7;
+      background-color: var(--umbral-success-bg);
+      color: var(--umbral-success);
     }
 
     .badge.blocked {
-      background-color: #7f1d1d;
-      color: #fca5a5;
+      background-color: var(--umbral-danger-bg);
+      color: var(--umbral-danger);
     }
 
     .btn-block {
-      background-color: #dc2626;
+      background-color: var(--umbral-danger);
       color: white;
       border: none;
       padding: 0.35rem 0.7rem;
@@ -202,15 +202,15 @@ export interface CredentialView {
     }
 
     .sec-item {
-      background-color: #0f172a;
+      background-color: var(--umbral-bg);
       padding: 1rem;
       border-radius: 0.5rem;
-      border: 1px solid #334155;
+      border: 1px solid var(--umbral-border);
 
       p {
         margin-bottom: 0;
         font-size: 0.875rem;
-        color: #cbd5e1;
+        color: var(--umbral-text-muted);
         line-height: 1.4;
       }
     }

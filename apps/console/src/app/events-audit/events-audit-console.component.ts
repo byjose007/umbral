@@ -85,8 +85,8 @@ export interface AuditEventView {
     .audit-container {
       padding: 1.5rem;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #0f172a;
-      color: #f8fafc;
+      background-color: var(--umbral-bg);
+      color: var(--umbral-text);
       min-height: 100vh;
     }
 
@@ -95,13 +95,13 @@ export interface AuditEventView {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1.5rem;
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid var(--umbral-surface);
       padding-bottom: 1rem;
     }
 
     .status-pill.verified {
-      background-color: #064e3b;
-      color: #34d399;
+      background-color: var(--umbral-success-bg);
+      color: var(--umbral-success);
       padding: 0.4rem 0.8rem;
       border-radius: 9999px;
       font-size: 0.875rem;
@@ -115,10 +115,10 @@ export interface AuditEventView {
     }
 
     .card {
-      background-color: #1e293b;
+      background-color: var(--umbral-surface);
       border-radius: 0.75rem;
       padding: 1.25rem;
-      border: 1px solid #334155;
+      border: 1px solid var(--umbral-border);
     }
 
     .panel-header {
@@ -130,18 +130,18 @@ export interface AuditEventView {
 
     h1, h2, h3 {
       margin-top: 0;
-      color: #f1f5f9;
+      color: var(--umbral-text);
     }
 
     .btn-verify {
-      background-color: #2563eb;
-      color: white;
+      background-color: var(--umbral-accent);
+      color: var(--umbral-accent-text);
       border: none;
       padding: 0.5rem 1rem;
       border-radius: 0.375rem;
       font-weight: 600;
       cursor: pointer;
-      &:hover { background-color: #1d4ed8; }
+      &:hover { background-color: var(--umbral-accent-hover); }
     }
 
     .events-table {
@@ -159,22 +159,22 @@ export interface AuditEventView {
 
     .table-header {
       font-weight: 700;
-      color: #94a3b8;
-      border-bottom: 1px solid #334155;
+      color: var(--umbral-text-muted);
+      border-bottom: 1px solid var(--umbral-border);
     }
 
     .table-row {
-      background-color: #0f172a;
+      background-color: var(--umbral-bg);
       border-radius: 0.25rem;
       align-items: center;
 
-      &.warning { background-color: #451a03; color: #fbbf24; }
-      &.critical { background-color: #450a0a; color: #f87171; font-weight: 600; }
+      &.warning { background-color: var(--umbral-warning-bg); color: var(--umbral-warning); }
+      &.critical { background-color: var(--umbral-danger-bg); color: var(--umbral-danger); font-weight: 600; }
     }
 
     .event-tag {
       font-weight: 600;
-      color: #38bdf8;
+      color: var(--umbral-teal);
     }
 
     .severity-badge {
@@ -185,13 +185,13 @@ export interface AuditEventView {
       text-transform: uppercase;
       font-weight: 700;
 
-      &.info { background-color: #1e3a8a; color: #93c5fd; }
-      &.warning { background-color: #78350f; color: #fde047; }
-      &.critical { background-color: #7f1d1d; color: #fca5a5; }
+      &.info { background-color: var(--umbral-surface-2); color: var(--umbral-teal); }
+      &.warning { background-color: var(--umbral-warning-bg); color: var(--umbral-warning); }
+      &.critical { background-color: var(--umbral-danger-bg); color: var(--umbral-danger); }
     }
 
     .hash-text {
-      color: #64748b;
+      color: var(--umbral-text-faint);
       font-size: 0.75rem;
     }
 
@@ -202,15 +202,15 @@ export interface AuditEventView {
     }
 
     .inv-item {
-      background-color: #0f172a;
+      background-color: var(--umbral-bg);
       padding: 1rem;
       border-radius: 0.5rem;
-      border: 1px solid #334155;
+      border: 1px solid var(--umbral-border);
 
       p {
         margin-bottom: 0;
         font-size: 0.85rem;
-        color: #cbd5e1;
+        color: var(--umbral-text-muted);
         line-height: 1.4;
       }
     }

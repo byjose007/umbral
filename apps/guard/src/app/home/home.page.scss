@@ -12,18 +12,18 @@
 .scan-result-box {
   padding: 16px;
   border-radius: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--umbral-border);
 
   &.valid-pass {
-    background-color: #e6f9ed;
-    border-color: #2dd36f;
-    color: #0f5132;
+    background-color: var(--umbral-success-bg);
+    border-color: var(--umbral-success);
+    color: var(--umbral-success);
   }
 
   &.invalid-pass {
-    background-color: #fde8e8;
-    border-color: #eb445a;
-    color: #842029;
+    background-color: var(--umbral-danger-bg);
+    border-color: var(--umbral-danger);
+    color: var(--umbral-danger);
   }
 }
 
@@ -38,7 +38,7 @@
     text-align: center;
     padding: 12px;
     border-radius: 8px;
-    background: #f4f5f8;
+    background: var(--umbral-surface-2);
 
     .num {
       display: block;
@@ -48,22 +48,22 @@
 
     .label {
       font-size: 0.85rem;
-      color: #666;
+      color: var(--umbral-text-muted);
     }
 
     &.total {
-      background: #e0f2fe;
-      color: #0369a1;
+      background: var(--umbral-surface-2);
+      color: var(--umbral-teal);
     }
 
     &.evacuated {
-      background: #dcfce7;
-      color: #15803d;
+      background: var(--umbral-success-bg);
+      color: var(--umbral-success);
     }
 
     &.missing {
-      background: #fee2e2;
-      color: #b91c1c;
+      background: var(--umbral-danger-bg);
+      color: var(--umbral-danger);
     }
   }
 }
@@ -74,18 +74,19 @@
 }
 
 .export-preview {
-  background: #1e1e1e;
-  color: #4ade80;
+  background: var(--umbral-bg);
+  color: var(--umbral-success);
   padding: 12px;
   border-radius: 6px;
   max-height: 180px;
   overflow-y: auto;
   font-size: 0.8rem;
+  font-family: var(--umbral-font-mono);
 }
 
 .audit-history {
-  background: #fffbeb;
-  border: 1px dashed #f59e0b;
+  background: var(--umbral-warning-bg);
+  border: 1px dashed var(--umbral-warning);
   padding: 12px;
   border-radius: 6px;
   font-size: 0.85rem;

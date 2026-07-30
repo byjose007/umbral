@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './modules/auth/auth.module';
 import { TopologyModule } from './modules/topology/topology.module';
 import { DecisionModule } from './modules/decision/decision.module';
 import { IdentityModule } from './modules/identity/identity.module';
@@ -19,6 +20,7 @@ import { HrisSyncModule } from './modules/hris-sync/hris-sync.module';
 
 @Module({
   imports: [
+    AuthModule,
     TopologyModule,
     DecisionModule,
     IdentityModule,

@@ -7,21 +7,20 @@
 @import "@ionic/angular/css/padding.css";
 @import "@ionic/angular/css/flex-utils.css";
 
-/* Always use dark mode for the User Pass PWA */
+/* The User Pass PWA is always dark — colors come from theme/variables.scss,
+   which maps Ionic's CSS variables onto the shared @umbral/design tokens. */
 @import '@ionic/angular/css/palettes/dark.always.css';
 
-/* Inter font for premium typography */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+/* UMBRAL design system — layout/spacing utilities only, colors come from
+   theme/variables.scss via Ionic's native CSS variables (see that file). */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 * {
-  font-family: 'Inter', system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
-ion-content {
-  --background: #0f0f1a;
-}
-
-ion-app {
-  background: #0f0f1a;
+body {
+  font-family: var(--umbral-font-sans);
 }

@@ -1,1 +1,18 @@
-/* You can add global styles to this file, and also import other style files */
+/* Design tokens shared with apps/user and apps/guard — see packages/design */
+@import '@umbral/design/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--umbral-bg);
+  color: var(--umbral-text);
+  font-family: var(--umbral-font-sans);
+}

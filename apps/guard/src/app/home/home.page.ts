@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import {
   IonHeader,
   IonToolbar,
@@ -10,6 +11,7 @@ import {
   IonSegmentButton,
   IonLabel,
   IonButton,
+  IonButtons,
   IonCard,
   IonCardHeader,
   IonCardTitle,
@@ -27,6 +29,7 @@ import {
   generateOfflineDynamicQRToken,
 } from '@umbral/core';
 import { GuardStorageService, GuardSyncCache, OverrideLogRecord } from '../services/guard-storage.service';
+import { AuthService } from '../auth/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -44,6 +47,7 @@ import { GuardStorageService, GuardSyncCache, OverrideLogRecord } from '../servi
     IonSegmentButton,
     IonLabel,
     IonButton,
+    IonButtons,
     IonCard,
     IonCardHeader,
     IonCardTitle,
@@ -83,13 +87,27 @@ export class HomePage implements OnInit {
   alerts: PseudonymizedAlert[] = [];
   unmaskedAlertIds = new Set<string>();
 
-  constructor(private storageService: GuardStorageService) {}
+  constructor(
+    private storageService: GuardStorageService,
+    private authService: AuthService,
+    private router: Router,
+  ) {}
 
   ngOnInit() {
     this.syncCache = this.storageService.getSyncCache();
     this.overrideLogs = this.storageService.getOverrideLogs();
     this.initMusterRoll();
     this.initAlerts();
+  }
+
+  /** Falls back to a generic id only if guarded routes were somehow bypassed. */
+  private get currentOperatorId(): string {
+    return this.authService.operator()?.id ?? 'UNKNOWN_OPERATOR';
+  }
+
+  async onLogout(): Promise<void> {
+    await this.authService.logout();
+    await this.router.navigateByUrl('/login');
   }
 
   // Generate mock valid token for demo scanning
@@ -128,7 +146,7 @@ export class HomePage implements OnInit {
   releaseGateManually(occupant: any) {
     const log: OverrideLogRecord = {
       id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      guardPersonId: 'GRD-HEAD-01',
+      guardPersonId: this.currentOperatorId,
       targetPersonId: occupant.personId,
       targetDocument: occupant.documentNumber,
       doorId: 'DOOR-MAIN-GARITA',
@@ -214,7 +232,7 @@ export class HomePage implements OnInit {
   }
 
   unmaskAlertIdentity(alertObj: PseudonymizedAlert) {
-    const { alert: unmaskedAlert, auditLog } = alertObj.unmaskWithAudit('GRD-HEAD-01');
+    const { alert: unmaskedAlert, auditLog } = alertObj.unmaskWithAudit(this.currentOperatorId);
     const idx = this.alerts.findIndex((a) => a.alertId === alertObj.alertId);
     if (idx !== -1) {
       this.alerts[idx] = unmaskedAlert;

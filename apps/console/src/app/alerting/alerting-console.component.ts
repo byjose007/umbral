@@ -93,8 +93,8 @@ export interface LiveFeedItemView {
     .alerting-container {
       padding: 1.5rem;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #0f172a;
-      color: #f8fafc;
+      background-color: var(--umbral-bg);
+      color: var(--umbral-text);
       min-height: 100vh;
     }
 
@@ -103,13 +103,13 @@ export interface LiveFeedItemView {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1.5rem;
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid var(--umbral-surface);
       padding-bottom: 1rem;
     }
 
     .status-pill.lopdp {
-      background-color: #1e3a8a;
-      color: #93c5fd;
+      background-color: var(--umbral-surface-2);
+      color: var(--umbral-teal);
       padding: 0.4rem 0.8rem;
       border-radius: 9999px;
       font-size: 0.875rem;
@@ -123,10 +123,10 @@ export interface LiveFeedItemView {
     }
 
     .card {
-      background-color: #1e293b;
+      background-color: var(--umbral-surface);
       border-radius: 0.75rem;
       padding: 1.25rem;
-      border: 1px solid #334155;
+      border: 1px solid var(--umbral-border);
     }
 
     .panel-header {
@@ -137,7 +137,7 @@ export interface LiveFeedItemView {
     }
 
     .pulse-indicator {
-      color: #ef4444;
+      color: var(--umbral-danger);
       font-weight: 700;
       font-size: 0.8rem;
       animation: pulse 1.5s infinite;
@@ -148,7 +148,7 @@ export interface LiveFeedItemView {
       50% { opacity: 0.3; }
     }
 
-    h1, h2, h3 { margin-top: 0; color: #f1f5f9; }
+    h1, h2, h3 { margin-top: 0; color: var(--umbral-text); }
 
     .feed-list {
       display: flex;
@@ -157,8 +157,8 @@ export interface LiveFeedItemView {
     }
 
     .feed-item {
-      background-color: #0f172a;
-      border: 1px solid #334155;
+      background-color: var(--umbral-bg);
+      border: 1px solid var(--umbral-border);
       padding: 0.85rem;
       border-radius: 0.5rem;
       display: flex;
@@ -173,9 +173,9 @@ export interface LiveFeedItemView {
       margin-bottom: 0.3rem;
     }
 
-    .time { font-size: 0.8rem; color: #64748b; font-family: monospace; }
-    .door-name { font-weight: 600; color: #f8fafc; }
-    .event-type { font-size: 0.85rem; color: #38bdf8; }
+    .time { font-size: 0.8rem; color: var(--umbral-text-faint); font-family: monospace; }
+    .door-name { font-weight: 600; color: var(--umbral-text); }
+    .event-type { font-size: 0.85rem; color: var(--umbral-teal); }
 
     .person-tag {
       display: flex;
@@ -184,8 +184,8 @@ export interface LiveFeedItemView {
       font-size: 0.85rem;
     }
 
-    .pseudo-tag { color: #94a3b8; }
-    .revealed-pii { color: #34d399; font-weight: 600; }
+    .pseudo-tag { color: var(--umbral-text-muted); }
+    .revealed-pii { color: var(--umbral-success); font-weight: 600; }
 
     .btn {
       border: none;
@@ -197,15 +197,15 @@ export interface LiveFeedItemView {
     }
 
     .btn-reveal {
-      background-color: #334155;
-      color: #f1f5f9;
-      &:hover { background-color: #475569; }
+      background-color: var(--umbral-border);
+      color: var(--umbral-text);
+      &:hover { background-color: var(--umbral-border-strong); }
     }
 
     .btn-ack {
-      background-color: #16a34a;
+      background-color: var(--umbral-success);
       color: white;
-      &:hover { background-color: #15803d; }
+      &:hover { background-color: var(--umbral-success); }
     }
 
     .badge {
@@ -215,9 +215,9 @@ export interface LiveFeedItemView {
       text-transform: uppercase;
       font-weight: 700;
 
-      &.info { background-color: #1e3a8a; color: #93c5fd; }
-      &.warning { background-color: #78350f; color: #fde047; }
-      &.critical { background-color: #7f1d1d; color: #fca5a5; }
+      &.info { background-color: var(--umbral-surface-2); color: var(--umbral-teal); }
+      &.warning { background-color: var(--umbral-warning-bg); color: var(--umbral-warning); }
+      &.critical { background-color: var(--umbral-danger-bg); color: var(--umbral-danger); }
     }
 
     .alerts-list {
@@ -227,8 +227,8 @@ export interface LiveFeedItemView {
     }
 
     .alert-box {
-      background-color: #0f172a;
-      border: 1px solid #7f1d1d;
+      background-color: var(--umbral-bg);
+      border: 1px solid var(--umbral-danger-bg);
       border-radius: 0.5rem;
       padding: 1rem;
     }
@@ -240,8 +240,8 @@ export interface LiveFeedItemView {
       margin-bottom: 0.4rem;
     }
 
-    .alert-title { font-weight: 700; color: #f87171; }
-    .alert-desc { font-size: 0.85rem; color: #cbd5e1; margin: 0 0 0.8rem 0; }
+    .alert-title { font-weight: 700; color: var(--umbral-danger); }
+    .alert-desc { font-size: 0.85rem; color: var(--umbral-text-muted); margin: 0 0 0.8rem 0; }
 
     .alert-footer {
       display: flex;
@@ -249,8 +249,8 @@ export interface LiveFeedItemView {
       align-items: center;
     }
 
-    .time-ago { font-size: 0.75rem; color: #64748b; }
-    .ack-tag { font-size: 0.8rem; color: #4ade80; font-weight: 600; }
+    .time-ago { font-size: 0.75rem; color: var(--umbral-text-faint); }
+    .ack-tag { font-size: 0.8rem; color: var(--umbral-success); font-weight: 600; }
   `]
 })
 export class AlertingConsoleComponent {

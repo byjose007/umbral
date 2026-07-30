@@ -56,6 +56,23 @@ describe('UserPassModule', () => {
     );
   });
 
+  it('rejects a second login with the wrong PIN hash', () => {
+    const personId = 'person-pin-01';
+    controller.login({ personId, pinHash: 'CORRECT_HASH' });
+
+    expect(() =>
+      controller.login({ personId, pinHash: 'WRONG_HASH' }),
+    ).toThrow(UnauthorizedException);
+  });
+
+  it('accepts a second login with the same PIN hash used at provisioning', () => {
+    const personId = 'person-pin-02';
+    const first = controller.login({ personId, pinHash: 'CORRECT_HASH' });
+    const second = controller.login({ personId, pinHash: 'CORRECT_HASH' });
+
+    expect(second.seedSecret).toBe(first.seedSecret);
+  });
+
   it('retrieves seed via GET seed/:personId after login', () => {
     const personId = 'person-003';
     const loginResult = controller.login({ personId, pinHash: 'HASH' });

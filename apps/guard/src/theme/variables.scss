@@ -1,2 +1,50 @@
-// For information on how to create your own theme, please refer to:
-// https://ionicframework.com/docs/theming/
+/**
+ * Maps UMBRAL's shared design tokens (packages/design/tokens.css) onto Ionic's
+ * native CSS variable theming API — the idiomatic way to theme Ionic instead
+ * of fighting its base styles with Tailwind overrides.
+ * See: https://ionicframework.com/docs/theming/
+ */
+
+@import '@umbral/design/tokens.css';
+
+:root {
+  /* Brand (amber) mapped to Ionic's primary color */
+  --ion-color-primary: var(--umbral-accent);
+  --ion-color-primary-rgb: 217, 164, 65;
+  --ion-color-primary-contrast: var(--umbral-accent-text);
+  --ion-color-primary-contrast-rgb: 26, 20, 6;
+  --ion-color-primary-shade: #c3933a;
+  --ion-color-primary-tint: #ddad54;
+
+  --ion-color-danger: var(--umbral-danger);
+  --ion-color-danger-rgb: 229, 72, 77;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #ca4045;
+  --ion-color-danger-tint: #e85b60;
+
+  --ion-color-success: var(--umbral-success);
+  --ion-color-success-rgb: 52, 211, 153;
+  --ion-color-success-contrast: #05261c;
+  --ion-color-success-contrast-rgb: 5, 38, 28;
+  --ion-color-success-shade: #2eba87;
+  --ion-color-success-tint: #48d8a3;
+
+  /* Base surfaces — dark-first, matching the console */
+  --ion-background-color: var(--umbral-bg);
+  --ion-background-color-rgb: 15, 17, 21;
+  --ion-text-color: var(--umbral-text);
+  --ion-text-color-rgb: 230, 232, 236;
+
+  --ion-toolbar-background: var(--umbral-surface);
+  --ion-toolbar-color: var(--umbral-text);
+  --ion-toolbar-border-color: var(--umbral-border);
+
+  --ion-item-background: var(--umbral-surface);
+  --ion-card-background: var(--umbral-surface);
+  --ion-border-color: var(--umbral-border);
+
+  --ion-tab-bar-background: var(--umbral-surface);
+  --ion-tab-bar-color: var(--umbral-text-muted);
+  --ion-tab-bar-color-selected: var(--umbral-accent);
+}

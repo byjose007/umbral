@@ -70,8 +70,8 @@ export interface GroupView {
     .access-rights-container {
       padding: 1.5rem;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #0f172a;
-      color: #f8fafc;
+      background-color: var(--umbral-bg);
+      color: var(--umbral-text);
       min-height: 100vh;
     }
 
@@ -80,13 +80,13 @@ export interface GroupView {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1.5rem;
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid var(--umbral-surface);
       padding-bottom: 1rem;
     }
 
     .status-pill.active {
-      background-color: #064e3b;
-      color: #34d399;
+      background-color: var(--umbral-success-bg);
+      color: var(--umbral-success);
       padding: 0.4rem 0.8rem;
       border-radius: 9999px;
       font-size: 0.875rem;
@@ -100,20 +100,20 @@ export interface GroupView {
     }
 
     .card {
-      background-color: #1e293b;
+      background-color: var(--umbral-surface);
       border-radius: 0.75rem;
       padding: 1.25rem;
-      border: 1px solid #334155;
+      border: 1px solid var(--umbral-border);
     }
 
     h1, h2 {
       margin-top: 0;
-      color: #f1f5f9;
+      color: var(--umbral-text);
     }
 
     .al-item, .group-item {
-      background-color: #0f172a;
-      border: 1px solid #334155;
+      background-color: var(--umbral-bg);
+      border: 1px solid var(--umbral-border);
       padding: 1rem;
       border-radius: 0.5rem;
       margin-bottom: 0.75rem;
@@ -130,22 +130,22 @@ export interface GroupView {
 
     .al-name, .group-name {
       font-weight: 600;
-      color: #f8fafc;
+      color: var(--umbral-text);
     }
 
     .al-detail, .group-meta {
       font-size: 0.85rem;
-      color: #94a3b8;
+      color: var(--umbral-text-muted);
     }
 
     .tag {
-      color: #38bdf8;
+      color: var(--umbral-teal);
       font-weight: 600;
     }
 
     .window-info {
       font-size: 0.8rem;
-      color: #64748b;
+      color: var(--umbral-text-faint);
       font-family: monospace;
     }
 
@@ -158,8 +158,8 @@ export interface GroupView {
     }
 
     .badge.time-effective {
-      background-color: #1e3a8a;
-      color: #93c5fd;
+      background-color: var(--umbral-surface-2);
+      color: var(--umbral-teal);
     }
   `]
 })

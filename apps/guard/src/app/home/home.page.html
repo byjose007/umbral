@@ -6,6 +6,9 @@
     <ion-badge slot="end" color="success" class="offline-badge">
       ⚡ Offline Ready (ES256 & CRL)
     </ion-badge>
+    <ion-buttons slot="end">
+      <ion-button (click)="onLogout()">Cerrar sesión</ion-button>
+    </ion-buttons>
   </ion-toolbar>
   <ion-toolbar color="light">
     <ion-segment [(ngModel)]="activeTab">

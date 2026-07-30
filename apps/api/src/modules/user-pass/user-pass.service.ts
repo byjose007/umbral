@@ -25,6 +25,7 @@ import type {
 interface SeedRecord {
   id: string;
   personId: string;
+  pinHash: string;
   seedSecret: string;
   encryptedSeed: string;
   salt: string;
@@ -79,15 +80,17 @@ export class UserPassService {
       throw new UnauthorizedException('personId and pinHash are required');
     }
 
-    let record = this.seedStore.get(dto.personId);
+    const existing = this.seedStore.get(dto.personId);
 
-    if (!record) {
-      // First login — provision a new seed
+    let record: SeedRecord;
+    if (!existing) {
+      // First login — provision a new seed and remember the PIN hash it was set up with
       const seedSecret = `UMBRAL-SEED-${uuidv4()}`; // In prod: random 256-bit via WebCrypto
       const salt = `SALT-${uuidv4()}`;
       record = {
         id: uuidv4(),
         personId: dto.personId,
+        pinHash: dto.pinHash,
         seedSecret,
         encryptedSeed: `ENC::${seedSecret}`, // In prod: AES-GCM encrypted blob
         salt,
@@ -95,12 +98,18 @@ export class UserPassService {
         issuedAt: new Date(),
       };
       this.seedStore.set(dto.personId, record);
+    } else {
+      record = existing;
     }
 
     if (record.status !== 'active') {
       throw new UnauthorizedException(
         `Pass seed for person ${dto.personId} is revoked`,
       );
+    }
+
+    if (record.pinHash !== dto.pinHash) {
+      throw new UnauthorizedException('PIN incorrecto');
     }
 
     return {

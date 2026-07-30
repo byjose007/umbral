@@ -35,3 +35,9 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import '@ionic/angular/css/palettes/dark.system.css';
+
+/* UMBRAL design system — layout/spacing utilities only, colors come from
+   theme/variables.scss via Ionic's native CSS variables (see that file). */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

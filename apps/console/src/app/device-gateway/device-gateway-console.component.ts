@@ -102,8 +102,8 @@ export interface ControllerGatewayView {
     .gateway-container {
       padding: 1.5rem;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #0f172a;
-      color: #f8fafc;
+      background-color: var(--umbral-bg);
+      color: var(--umbral-text);
       min-height: 100vh;
     }
 
@@ -112,13 +112,13 @@ export interface ControllerGatewayView {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1.5rem;
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid var(--umbral-surface);
       padding-bottom: 1rem;
     }
 
     .status-pill.mtls {
-      background-color: #064e3b;
-      color: #34d399;
+      background-color: var(--umbral-success-bg);
+      color: var(--umbral-success);
       padding: 0.4rem 0.8rem;
       border-radius: 9999px;
       font-size: 0.875rem;
@@ -132,20 +132,20 @@ export interface ControllerGatewayView {
     }
 
     .card {
-      background-color: #1e293b;
+      background-color: var(--umbral-surface);
       border-radius: 0.75rem;
       padding: 1.25rem;
-      border: 1px solid #334155;
+      border: 1px solid var(--umbral-border);
     }
 
     h1, h2, h3 {
       margin-top: 0;
-      color: #f1f5f9;
+      color: var(--umbral-text);
     }
 
     .controller-item {
-      background-color: #0f172a;
-      border: 1px solid #334155;
+      background-color: var(--umbral-bg);
+      border: 1px solid var(--umbral-border);
       padding: 1rem;
       border-radius: 0.5rem;
       margin-bottom: 0.75rem;
@@ -154,7 +154,7 @@ export interface ControllerGatewayView {
       align-items: center;
 
       &.offline {
-        border-color: #94a3b8;
+        border-color: var(--umbral-text-muted);
       }
     }
 
@@ -166,23 +166,23 @@ export interface ControllerGatewayView {
 
     .ctrl-name {
       font-weight: 600;
-      color: #f8fafc;
+      color: var(--umbral-text);
     }
 
     .ctrl-ip {
       font-size: 0.85rem;
-      color: #94a3b8;
+      color: var(--umbral-text-muted);
       margin-left: 0.4rem;
     }
 
     .cert-thumb {
       font-size: 0.8rem;
-      color: #64748b;
+      color: var(--umbral-text-faint);
     }
 
     .sync-info {
       font-size: 0.85rem;
-      color: #cbd5e1;
+      color: var(--umbral-text-muted);
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -197,13 +197,13 @@ export interface ControllerGatewayView {
     }
 
     .badge.synced {
-      background-color: #064e3b;
-      color: #6ee7b7;
+      background-color: var(--umbral-success-bg);
+      color: var(--umbral-success);
     }
 
     .badge.push-needed {
-      background-color: #78350f;
-      color: #fde047;
+      background-color: var(--umbral-warning-bg);
+      color: var(--umbral-warning);
     }
 
     .ctrl-status {
@@ -221,18 +221,18 @@ export interface ControllerGatewayView {
     }
 
     .pill.online {
-      background-color: #064e3b;
-      color: #6ee7b7;
+      background-color: var(--umbral-success-bg);
+      color: var(--umbral-success);
     }
 
     .pill.offline {
-      background-color: #475569;
-      color: #cbd5e1;
+      background-color: var(--umbral-border-strong);
+      color: var(--umbral-text-muted);
     }
 
     .drift-alert {
       font-size: 0.75rem;
-      color: #f87171;
+      color: var(--umbral-danger);
       font-weight: 600;
     }
 
@@ -243,15 +243,15 @@ export interface ControllerGatewayView {
     }
 
     .p-item {
-      background-color: #0f172a;
+      background-color: var(--umbral-bg);
       padding: 1rem;
       border-radius: 0.5rem;
-      border: 1px solid #334155;
+      border: 1px solid var(--umbral-border);
 
       p {
         margin-bottom: 0;
         font-size: 0.875rem;
-        color: #cbd5e1;
+        color: var(--umbral-text-muted);
         line-height: 1.4;
       }
     }

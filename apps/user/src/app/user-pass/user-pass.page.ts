@@ -1,9 +1,12 @@
-import { Component, signal, computed, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import {
   IonContent,
 } from '@ionic/angular/standalone';
+import { environment } from '../../environments/environment';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,21 +69,18 @@ interface VisitorPassRecord {
 
                 <div class="pin-grid">
                   @for (n of pinNumbers; track n) {
-                    <button class="pin-btn" (click)="onPinDigit(n)" [attr.id]="'pin-btn-' + n">
+                    <button class="pin-btn" [disabled]="isVerifyingPin()" (click)="onPinDigit(n)" [attr.id]="'pin-btn-' + n">
                       {{ n }}
                     </button>
                   }
-                  <button class="pin-btn pin-action" (click)="onBiometric()" id="pin-biometric-btn">
-                    ☁
-                  </button>
-                  <button class="pin-btn" (click)="onPinDigit(0)" id="pin-btn-0">0</button>
-                  <button class="pin-btn pin-action pin-clear" (click)="clearPin()" id="pin-clear-btn">
+                  <div></div>
+                  <button class="pin-btn" [disabled]="isVerifyingPin()" (click)="onPinDigit(0)" id="pin-btn-0">0</button>
+                  <button class="pin-btn pin-action pin-clear" [disabled]="isVerifyingPin()" (click)="clearPin()" id="pin-clear-btn">
                     ⌫
                   </button>
                 </div>
 
-                <p class="login-hint">PIN de 4 dígitos o biometría</p>
-                <p class="login-demo-hint">Demo: PIN <strong>1234</strong></p>
+                <p class="login-hint">PIN de 4 dígitos</p>
               </div>
             </div>
           }
@@ -881,11 +881,19 @@ interface VisitorPassRecord {
 export class UserPassPage implements OnInit, OnDestroy {
   // ─── Auth ─────────────────────────────────────────────────────────────────
 
+  private readonly http = inject(HttpClient);
+
   isAuthenticated = signal(false);
   loginError = signal<string | null>(null);
+  isVerifyingPin = signal(false);
+
+  // There is no device-activation/SSO flow yet (out of scope for this pass) —
+  // this PWA is provisioned for a single known person per device, matching
+  // the `user_pass_seeds` one-row-per-person model in the backend.
+  private readonly PERSON_ID = 'person-demo-001';
 
   currentUser = signal({
-    id: 'person-demo-001',
+    id: this.PERSON_ID,
     name: 'Byron José López',
     department: 'Tecnología · Piso 4',
   });
@@ -898,7 +906,6 @@ export class UserPassPage implements OnInit, OnDestroy {
   private pinValue = '';
   pinDots = signal([false, false, false, false]);
   readonly pinNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-  private readonly DEMO_PIN = '1234';
 
   // ─── Navigation ───────────────────────────────────────────────────────────
 
@@ -969,31 +976,47 @@ export class UserPassPage implements OnInit, OnDestroy {
   // ─── Auth Methods ─────────────────────────────────────────────────────────
 
   onPinDigit(n: number): void {
-    if (this.pinValue.length >= 4) return;
+    if (this.pinValue.length >= 4 || this.isVerifyingPin()) return;
     this.pinValue += n.toString();
     this.pinDots.set([false, false, false, false].map((_, i) => i < this.pinValue.length));
     if (this.pinValue.length === 4) setTimeout(() => this._checkPin(), 200);
   }
 
   clearPin(): void {
+    if (this.isVerifyingPin()) return;
     this.pinValue = this.pinValue.slice(0, -1);
     this.pinDots.set([false, false, false, false].map((_, i) => i < this.pinValue.length));
   }
 
-  onBiometric(): void {
+  private async _checkPin(): Promise<void> {
+    this.isVerifyingPin.set(true);
     this.loginError.set(null);
-    this._onLoginSuccess();
-  }
 
-  private _checkPin(): void {
-    if (this.pinValue === this.DEMO_PIN) {
-      this.loginError.set(null);
+    try {
+      const pinHash = await this._hashPin(this.pinValue);
+      await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/user-pass/login`, {
+          personId: this.PERSON_ID,
+          pinHash,
+        }),
+      );
       this._onLoginSuccess();
-    } else {
+    } catch {
       this.loginError.set('PIN incorrecto. Intenta de nuevo.');
       this.pinValue = '';
       this.pinDots.set([false, false, false, false]);
+    } finally {
+      this.isVerifyingPin.set(false);
     }
+  }
+
+  /** Web Crypto SubtleCrypto — the PIN itself never leaves the device. */
+  private async _hashPin(pin: string): Promise<string> {
+    const data = new TextEncoder().encode(pin);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
   }
 
   private _onLoginSuccess(): void {

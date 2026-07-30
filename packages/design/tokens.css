@@ -1,0 +1,80 @@
+/**
+ * UMBRAL design tokens — single source of truth for color, type, spacing and
+ * elevation across console, guard PWA and user PWA. Dark-first: this is an
+ * operator/security console, not a consumer product, and a graphite base
+ * with a restrained amber accent reads as "control room", not "SaaS dashboard".
+ */
+
+:root {
+  /* Surfaces */
+  --umbral-bg: #0f1115;
+  --umbral-surface: #171a21;
+  --umbral-surface-2: #1f232c;
+  --umbral-surface-hover: #262b36;
+  --umbral-border: #2a2f3a;
+  --umbral-border-strong: #3a4150;
+
+  /* Text */
+  --umbral-text: #e6e8ec;
+  --umbral-text-muted: #9aa1ad;
+  --umbral-text-faint: #6b7280;
+
+  /* Brand accent — amber, used sparingly for primary actions & focus */
+  --umbral-accent: #d9a441;
+  --umbral-accent-hover: #e8b957;
+  --umbral-accent-text: #1a1406;
+
+  /* Secondary accent — teal, used for "active/ok" states */
+  --umbral-teal: #2dd4bf;
+
+  /* Semantic status */
+  --umbral-success: #34d399;
+  --umbral-success-bg: #123128;
+  --umbral-warning: #f5a623;
+  --umbral-warning-bg: #3a2a0f;
+  --umbral-danger: #e5484d;
+  --umbral-danger-bg: #3a1618;
+
+  /* Typography */
+  --umbral-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+  --umbral-font-mono: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+
+  /* Spacing (4px base scale) */
+  --umbral-space-1: 0.25rem;
+  --umbral-space-2: 0.5rem;
+  --umbral-space-3: 0.75rem;
+  --umbral-space-4: 1rem;
+  --umbral-space-6: 1.5rem;
+  --umbral-space-8: 2rem;
+  --umbral-space-12: 3rem;
+
+  /* Radius */
+  --umbral-radius-sm: 6px;
+  --umbral-radius-md: 10px;
+  --umbral-radius-lg: 16px;
+
+  /* Elevation (subtle — dark surfaces don't need heavy shadows) */
+  --umbral-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --umbral-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+/* Opt-in light theme (e.g. `<html data-theme="light">`) — kept minimal;
+   the product's primary identity is the dark theme above. */
+:root[data-theme='light'] {
+  --umbral-bg: #f5f6f8;
+  --umbral-surface: #ffffff;
+  --umbral-surface-2: #f0f1f4;
+  --umbral-surface-hover: #e8eaee;
+  --umbral-border: #dde0e6;
+  --umbral-border-strong: #c7cbd4;
+
+  --umbral-text: #1a1d23;
+  --umbral-text-muted: #565d6b;
+  --umbral-text-faint: #8790a0;
+
+  --umbral-accent-text: #1a1406;
+  --umbral-success-bg: #e3f9f0;
+  --umbral-warning-bg: #fdf1de;
+  --umbral-danger-bg: #fbe9e9;
+}

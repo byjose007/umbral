@@ -129,6 +129,14 @@ export * from './domain/hris-sync/csv-parser.js';
 export * from './domain/hris-sync/watcher.port.js';
 export * from './domain/hris-sync/reconciler.js';
 
+// Crypto utilities (env-agnostic: Node.js and Browser / Service Workers)
+export * from './domain/crypto-utils.js';
+
+// Domain — Auth (Operator accounts & RBAC)
+export * from './domain/auth/ids.js';
+export * from './domain/auth/errors.js';
+export * from './domain/auth/roles.js';
+export * from './domain/auth/operator.entity.js';
 
 
 

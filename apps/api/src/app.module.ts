@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_PIPE, APP_GUARD } from '@nestjs/core';
+import { ZodValidationPipe } from 'nestjs-zod';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -20,6 +23,9 @@ import { HrisSyncModule } from './modules/hris-sync/hris-sync.module';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot({
+      throttlers: [{ name: 'default', ttl: 60_000, limit: 60 }],
+    }),
     AuthModule,
     TopologyModule,
     DecisionModule,
@@ -38,6 +44,10 @@ import { HrisSyncModule } from './modules/hris-sync/hris-sync.module';
     HrisSyncModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_PIPE, useClass: ZodValidationPipe },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

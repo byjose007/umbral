@@ -21,7 +21,27 @@ import {
   IonBadge,
   IonList,
   IonSearchbar,
+  IonIcon,
+  AlertController,
+  ToastController,
 } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import {
+  shieldCheckmarkOutline,
+  flashOutline,
+  cameraOutline,
+  keyOutline,
+  warningOutline,
+  notificationsOutline,
+  searchOutline,
+  checkmarkCircleOutline,
+  closeCircleOutline,
+  lockOpenOutline,
+  clipboardOutline,
+  documentTextOutline,
+  saveOutline,
+  eyeOutline,
+} from 'ionicons/icons';
 import {
   verifyGuardQRTokenOffline,
   MusterRoll,
@@ -30,6 +50,23 @@ import {
 } from '@umbral/core';
 import { GuardStorageService, GuardSyncCache, OverrideLogRecord } from '../services/guard-storage.service';
 import { AuthService } from '../auth/auth.service';
+
+addIcons({
+  'shield-checkmark-outline': shieldCheckmarkOutline,
+  'flash-outline': flashOutline,
+  'camera-outline': cameraOutline,
+  'key-outline': keyOutline,
+  'warning-outline': warningOutline,
+  'notifications-outline': notificationsOutline,
+  'search-outline': searchOutline,
+  'checkmark-circle-outline': checkmarkCircleOutline,
+  'close-circle-outline': closeCircleOutline,
+  'lock-open-outline': lockOpenOutline,
+  'clipboard-outline': clipboardOutline,
+  'document-text-outline': documentTextOutline,
+  'save-outline': saveOutline,
+  'eye-outline': eyeOutline,
+});
 
 @Component({
   selector: 'app-home',
@@ -57,6 +94,7 @@ import { AuthService } from '../auth/auth.service';
     IonBadge,
     IonList,
     IonSearchbar,
+    IonIcon,
   ],
 })
 export class HomePage implements OnInit {
@@ -91,6 +129,8 @@ export class HomePage implements OnInit {
     private storageService: GuardStorageService,
     private authService: AuthService,
     private router: Router,
+    private alertController: AlertController,
+    private toastController: ToastController,
   ) {}
 
   ngOnInit() {
@@ -105,9 +145,28 @@ export class HomePage implements OnInit {
     return this.authService.operator()?.id ?? 'UNKNOWN_OPERATOR';
   }
 
+  private async presentToast(message: string, color: 'success' | 'danger' | 'warning' = 'success') {
+    const toast = await this.toastController.create({ message, duration: 2500, color, position: 'bottom' });
+    await toast.present();
+  }
+
   async onLogout(): Promise<void> {
-    await this.authService.logout();
-    await this.router.navigateByUrl('/login');
+    const alert = await this.alertController.create({
+      header: 'Cerrar sesión',
+      message: '¿Seguro que quieres cerrar sesión?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Cerrar sesión',
+          role: 'destructive',
+          handler: async () => {
+            await this.authService.logout();
+            await this.router.navigateByUrl('/login');
+          },
+        },
+      ],
+    });
+    await alert.present();
   }
 
   // Generate mock valid token for demo scanning
@@ -128,6 +187,10 @@ export class HomePage implements OnInit {
       this.syncCache.seedSecret,
       this.syncCache.crlList
     );
+    void this.presentToast(
+      this.scanResult.valid ? 'Acceso autorizado' : 'Acceso denegado',
+      this.scanResult.valid ? 'success' : 'danger',
+    );
   }
 
   // Contingency manual lookup & release
@@ -143,20 +206,34 @@ export class HomePage implements OnInit {
     );
   }
 
-  releaseGateManually(occupant: any) {
-    const log: OverrideLogRecord = {
-      id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      guardPersonId: this.currentOperatorId,
-      targetPersonId: occupant.personId,
-      targetDocument: occupant.documentNumber,
-      doorId: 'DOOR-MAIN-GARITA',
-      reason: this.overrideReason,
-      action: 'manual_contingency_grant',
-      createdAt: new Date().toISOString(),
-    };
-    this.storageService.saveOverrideLog(log);
-    this.overrideLogs = this.storageService.getOverrideLogs();
-    alert(`Garita liberada manualmente para ${occupant.fullName}. Registro de auditoría guardado offline.`);
+  async releaseGateManually(occupant: any) {
+    const alertEl = await this.alertController.create({
+      header: 'Liberar garita manualmente',
+      message: `Esto abrirá la garita para ${occupant.fullName} y quedará en el registro de auditoría con el motivo indicado. ¿Continuar?`,
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Liberar',
+          role: 'destructive',
+          handler: () => {
+            const log: OverrideLogRecord = {
+              id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+              guardPersonId: this.currentOperatorId,
+              targetPersonId: occupant.personId,
+              targetDocument: occupant.documentNumber,
+              doorId: 'DOOR-MAIN-GARITA',
+              reason: this.overrideReason,
+              action: 'manual_contingency_grant',
+              createdAt: new Date().toISOString(),
+            };
+            this.storageService.saveOverrideLog(log);
+            this.overrideLogs = this.storageService.getOverrideLogs();
+            void this.presentToast(`Garita liberada para ${occupant.fullName}. Auditoría guardada offline.`);
+          },
+        },
+      ],
+    });
+    await alertEl.present();
   }
 
   // Muster Roll emergency evacuations
@@ -249,5 +326,6 @@ export class HomePage implements OnInit {
     };
     this.storageService.saveOverrideLog(logRecord);
     this.overrideLogs = this.storageService.getOverrideLogs();
+    void this.presentToast('Identidad revelada — consulta registrada en auditoría', 'warning');
   }
 }

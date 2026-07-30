@@ -1,11 +1,13 @@
-import { Controller, Get, Post, Put, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, UseGuards } from '@nestjs/common';
 import { HrisSyncService } from './hris-sync.service.js';
 import {
   ImportCsvDto,
   ConfigureWatcherDto,
   TriggerBatchDto,
 } from './dto/hris-sync.dto.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 
+@UseGuards(JwtAuthGuard)
 @Controller('hris-sync')
 export class HrisSyncController {
   constructor(private readonly hrisSyncService: HrisSyncService) {}

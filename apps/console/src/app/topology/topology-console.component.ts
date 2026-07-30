@@ -2,6 +2,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { API_BASE_URL } from '../api-base-url';
+import { ToastService } from '../shared/ui/toast.service';
+import { ConfirmService } from '../shared/ui/confirm.service';
 
 interface SiteDto {
   props: { id: string; code: string; name: string; timezone: string };
@@ -149,6 +151,8 @@ interface ActionLogEntry {
 })
 export class TopologyConsoleComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly toastService = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
 
   protected readonly sites = signal<{ id: string; code: string; name: string; timezone: string }[]>([]);
   protected readonly doors = signal<DoorView[]>([]);
@@ -190,21 +194,40 @@ export class TopologyConsoleComponent implements OnInit {
         doorId: door.id,
       })
       .subscribe({
-        next: () => this.log(`${door.hierarchicalName}: acceso concedido por orden remota`, 'info'),
-        error: () => this.log(`${door.hierarchicalName}: falló la orden de apertura`, 'critical'),
+        next: () => {
+          this.log(`${door.hierarchicalName}: acceso concedido por orden remota`, 'info');
+          this.toastService.success(`Acceso concedido: ${door.hierarchicalName}`);
+        },
+        error: () => {
+          this.log(`${door.hierarchicalName}: falló la orden de apertura`, 'critical');
+          this.toastService.error(`Falló la orden de apertura: ${door.hierarchicalName}`);
+        },
       });
   }
 
-  protected triggerForcedOpen(door: DoorView): void {
+  protected async triggerForcedOpen(door: DoorView): Promise<void> {
+    const confirmed = await this.confirmService.confirm(
+      `Esto simulará una apertura forzada (DPS violado) en "${door.hierarchicalName}" y generará una alerta crítica. ¿Continuar?`,
+      'Simular apertura forzada',
+    );
+    if (!confirmed) {
+      return;
+    }
+
     this.http
       .post<{ success: boolean }>(
         `${API_BASE_URL}/topology/simulator/forced-open/${door.id}`,
         {},
       )
       .subscribe({
-        next: () =>
-          this.log(`${door.hierarchicalName}: ALERTA — apertura forzada simulada (DPS violado)`, 'critical'),
-        error: () => this.log(`${door.hierarchicalName}: falló la simulación de apertura forzada`, 'critical'),
+        next: () => {
+          this.log(`${door.hierarchicalName}: ALERTA — apertura forzada simulada (DPS violado)`, 'critical');
+          this.toastService.error(`Apertura forzada simulada: ${door.hierarchicalName}`);
+        },
+        error: () => {
+          this.log(`${door.hierarchicalName}: falló la simulación de apertura forzada`, 'critical');
+          this.toastService.error(`Falló la simulación: ${door.hierarchicalName}`);
+        },
       });
   }
 

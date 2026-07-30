@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service.js';
 import {
   QueryFlowAggregatesDto,
@@ -6,7 +6,9 @@ import {
   SaveFilterDto,
   ExportReportDto,
 } from './dto/analytics.dto.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 
+@UseGuards(JwtAuthGuard)
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}

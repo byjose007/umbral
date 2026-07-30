@@ -1,4 +1,10 @@
-import { Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  OnModuleInit,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import {
@@ -9,7 +15,13 @@ import {
   sha256Hex,
   randomHexBytes,
 } from '@umbral/core';
-import { LoginDto, RefreshDto, LogoutDto } from './dto/auth.dto';
+import {
+  LoginDto,
+  RefreshDto,
+  LogoutDto,
+  CreateOperatorDto,
+  UpdateOperatorDto,
+} from './dto/auth.dto';
 import { v4 as uuidv4 } from './uuid';
 
 interface RefreshTokenRecord {
@@ -119,6 +131,39 @@ export class AuthService implements OnModuleInit {
       record.revokedAt = new Date();
     }
     return { success: true };
+  }
+
+  // ─── Operator management (admin-only, see OperatorsController) ───────────
+
+  listOperators() {
+    return Array.from(this.operatorsById.values()).map((op) => op.publicProps);
+  }
+
+  async createOperator(dto: CreateOperatorDto) {
+    if (this.operatorIdByEmail.has(dto.email.trim().toLowerCase())) {
+      throw new BadRequestException('Ya existe un operador con ese correo');
+    }
+    const operator = await this.registerOperator(dto);
+    return operator.publicProps;
+  }
+
+  updateOperator(id: string, dto: UpdateOperatorDto) {
+    const operator = this.operatorsById.get(makeOperatorId(id));
+    if (!operator) {
+      throw new NotFoundException(`Operador ${id} no encontrado`);
+    }
+
+    const result = Operator.create({
+      ...operator.props,
+      role: dto.role ?? operator.role,
+      status: dto.status ?? operator.status,
+    });
+    if (result.isErr()) {
+      throw new BadRequestException(result.error.message);
+    }
+
+    this.operatorsById.set(operator.id, result.value);
+    return result.value.publicProps;
   }
 
   /** Used by JwtStrategy to re-check the operator is still active on every request. */

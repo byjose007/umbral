@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { EventsAuditService } from './events-audit.service';
 import {
   RecordEventDto,
@@ -6,7 +6,9 @@ import {
   VerifyChainDto,
   PurgeEventsDto,
 } from './dto/events-audit.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('events-audit')
 export class EventsAuditController {
   constructor(private readonly eventsAuditService: EventsAuditService) {}

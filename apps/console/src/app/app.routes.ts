@@ -65,6 +65,13 @@ export const routes: Routes = [
             (m) => m.DeviceGatewayConsoleComponent,
           ),
       },
+      {
+        path: 'operators',
+        loadComponent: () =>
+          import('./operators/operators-console.component').then(
+            (m) => m.OperatorsConsoleComponent,
+          ),
+      },
     ],
   },
 ];

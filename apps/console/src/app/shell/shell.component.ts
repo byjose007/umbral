@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
+import { ConfirmService } from '../shared/ui/confirm.service';
 import { NAV_GROUPS } from './nav-items';
 
 @Component({
@@ -9,13 +10,32 @@ import { NAV_GROUPS } from './nav-items';
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
   template: `
     <div class="flex h-screen bg-bg text-text">
-      <aside class="w-60 shrink-0 border-r border-border bg-surface flex flex-col">
-        <div class="px-4 py-4 text-lg font-semibold tracking-tight border-b border-border">
-          UMBRAL
+      <!-- Backdrop for the mobile drawer -->
+      @if (isSidebarOpen()) {
+        <div
+          class="fixed inset-0 z-20 bg-black/50 lg:hidden"
+          (click)="isSidebarOpen.set(false)"
+        ></div>
+      }
+
+      <aside
+        class="fixed inset-y-0 left-0 z-30 w-60 shrink-0 -translate-x-full border-r border-border bg-surface flex flex-col transition-transform duration-200 lg:static lg:translate-x-0"
+        [class.translate-x-0]="isSidebarOpen()"
+      >
+        <div class="flex items-center justify-between px-4 py-4 border-b border-border">
+          <span class="text-lg font-semibold tracking-tight">UMBRAL</span>
+          <button
+            type="button"
+            class="text-text-muted hover:text-text lg:hidden"
+            (click)="isSidebarOpen.set(false)"
+            aria-label="Cerrar menú"
+          >
+            ✕
+          </button>
         </div>
 
         <nav class="flex-1 overflow-y-auto py-2">
-          @for (group of navGroups; track group.label) {
+          @for (group of visibleNavGroups(); track group.label) {
             <div class="px-4 pt-4 pb-1 text-xs font-medium uppercase tracking-wide text-text-faint">
               {{ group.label }}
             </div>
@@ -23,6 +43,7 @@ import { NAV_GROUPS } from './nav-items';
               <a
                 [routerLink]="item.path"
                 routerLinkActive="bg-surface-2 text-accent border-accent"
+                (click)="isSidebarOpen.set(false)"
                 class="mx-2 block rounded-md border border-transparent px-3 py-1.5 text-sm text-text-muted hover:bg-surface-hover hover:text-text"
               >
                 {{ item.label }}
@@ -33,8 +54,16 @@ import { NAV_GROUPS } from './nav-items';
       </aside>
 
       <div class="flex flex-1 flex-col overflow-hidden">
-        <header class="flex items-center justify-between border-b border-border bg-surface px-6 py-3">
-          <div></div>
+        <header class="flex items-center justify-between border-b border-border bg-surface px-4 py-3 lg:px-6">
+          <button
+            type="button"
+            class="text-text-muted hover:text-text lg:hidden"
+            (click)="isSidebarOpen.set(true)"
+            aria-label="Abrir menú"
+          >
+            ☰
+          </button>
+          <div class="hidden lg:block"></div>
           @if (authService.operator(); as operator) {
             <div class="flex items-center gap-3 text-sm">
               <div class="text-right">
@@ -60,7 +89,14 @@ import { NAV_GROUPS } from './nav-items';
   `,
 })
 export class ShellComponent {
-  protected readonly navGroups = NAV_GROUPS;
+  protected readonly isSidebarOpen = signal(false);
+
+  protected readonly visibleNavGroups = computed(() => {
+    const role = this.authService.operator()?.role;
+    return NAV_GROUPS.filter((group) => !group.roles || (role && group.roles.includes(role)));
+  });
+
+  private readonly confirmService = inject(ConfirmService);
 
   constructor(
     protected readonly authService: AuthService,
@@ -68,6 +104,13 @@ export class ShellComponent {
   ) {}
 
   async onLogout(): Promise<void> {
+    const confirmed = await this.confirmService.confirm(
+      '¿Seguro que quieres cerrar sesión?',
+      'Cerrar sesión',
+    );
+    if (!confirmed) {
+      return;
+    }
     await this.authService.logout();
     await this.router.navigateByUrl('/login');
   }

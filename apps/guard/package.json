@@ -29,6 +29,7 @@
     "@capacitor/status-bar": "8.0.3",
     "@capgo/capacitor-nfc": "^8.2.2",
     "@ionic/angular": "^8.0.0",
+    "@umbral/core": "workspace:*",
     "@umbral/design": "workspace:*",
     "ionicons": "^7.0.0",
     "rxjs": "~7.8.0",

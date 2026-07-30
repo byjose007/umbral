@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { TopologyService } from './topology.service';
 import {
   CreateSiteDto,
@@ -12,7 +12,11 @@ import {
   GrantAccessDto,
 } from './dto/topology.dto';
 import { makeDoorId } from '@umbral/core';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
+@UseGuards(JwtAuthGuard)
 @Controller('topology')
 export class TopologyController {
   constructor(private readonly topologyService: TopologyService) {}
@@ -50,11 +54,15 @@ export class TopologyController {
     return this.topologyService.getLockProfiles();
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'supervisor')
   @Post('lock-profiles/propose')
   proposeLockProfileChange(@Body() dto: ProposeLifeSafetyChangeDto) {
     return this.topologyService.proposeLockProfileChange(dto);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'supervisor')
   @Post('lock-profiles/approve')
   approveLockProfileChange(@Body() dto: ApproveLifeSafetyChangeDto) {
     return this.topologyService.approveLockProfileChange(dto);

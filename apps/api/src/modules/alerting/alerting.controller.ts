@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { AlertingService } from './alerting.service';
 import {
   CreateAlertRuleDto,
@@ -7,7 +7,9 @@ import {
   RevealPiiDto,
 } from './dto/alerting.dto';
 import { EventSeverity } from '@umbral/core';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('alerting')
 export class AlertingController {
   constructor(private readonly alertingService: AlertingService) {}

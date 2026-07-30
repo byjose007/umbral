@@ -1,6 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { forkJoin, map, of, switchMap } from 'rxjs';
+import { map, of, switchMap } from 'rxjs';
 import { API_BASE_URL } from '../api-base-url';
 
 interface PersonDto {
@@ -13,7 +13,15 @@ interface PersonDto {
   externalRef?: string | null;
 }
 
+interface PersonsPageDto {
+  items: PersonDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 interface AccessStatusDto {
+  personId: string;
   status: 'allowed' | 'blocked';
   reasonCode?: string;
   message?: string;
@@ -29,6 +37,8 @@ export interface PersonView {
   blockReason?: string;
 }
 
+const PAGE_SIZE = 10;
+
 @Component({
   selector: 'app-identity-console',
   standalone: true,
@@ -43,7 +53,12 @@ export interface PersonView {
 
       <main class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section class="rounded-lg border border-border bg-surface p-5">
-          <h2 class="mb-3 text-base font-semibold text-text">Personas e Identidades</h2>
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-base font-semibold text-text">Personas e Identidades</h2>
+            @if (total() > 0) {
+              <span class="text-sm text-text-muted">{{ total() }} en total</span>
+            }
+          </div>
 
           @if (isLoading()) {
             <p class="text-sm text-text-muted">Cargando personas…</p>
@@ -86,6 +101,28 @@ export interface PersonView {
                 </div>
               }
             </div>
+
+            @if (totalPages() > 1) {
+              <div class="mt-4 flex items-center justify-between">
+                <button
+                  type="button"
+                  class="rounded-md border border-border px-3 py-1.5 text-sm text-text-muted hover:bg-surface-hover hover:text-text disabled:opacity-40"
+                  [disabled]="page() <= 1"
+                  (click)="loadPage(page() - 1)"
+                >
+                  ← Anterior
+                </button>
+                <span class="text-sm text-text-muted">Página {{ page() }} de {{ totalPages() }}</span>
+                <button
+                  type="button"
+                  class="rounded-md border border-border px-3 py-1.5 text-sm text-text-muted hover:bg-surface-hover hover:text-text disabled:opacity-40"
+                  [disabled]="page() >= totalPages()"
+                  (click)="loadPage(page() + 1)"
+                >
+                  Siguiente →
+                </button>
+              </div>
+            }
           }
         </section>
 
@@ -127,28 +164,45 @@ export class IdentityConsoleComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
   protected readonly persons = signal<PersonView[]>([]);
+  protected readonly total = signal(0);
+  protected readonly page = signal(1);
   protected readonly isLoading = signal(true);
   protected readonly loadError = signal<string | null>(null);
 
+  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / PAGE_SIZE)));
+
   ngOnInit(): void {
+    this.loadPage(1);
+  }
+
+  protected loadPage(page: number): void {
+    this.isLoading.set(true);
+    this.loadError.set(null);
+
     this.http
-      .get<PersonDto[]>(`${API_BASE_URL}/identity/persons`)
+      .get<PersonsPageDto>(`${API_BASE_URL}/identity/persons`, {
+        params: { page: String(page), pageSize: String(PAGE_SIZE) },
+      })
       .pipe(
-        switchMap((people) => {
-          if (people.length === 0) {
-            return of([] as PersonView[]);
+        switchMap((pageResult) => {
+          if (pageResult.items.length === 0) {
+            return of({ pageResult, statuses: [] as AccessStatusDto[] });
           }
-          const withStatus = people.map((person) =>
-            this.http
-              .get<AccessStatusDto>(`${API_BASE_URL}/identity/persons/${person.id}/access-status`)
-              .pipe(map((status) => this.toView(person, status))),
-          );
-          return forkJoin(withStatus);
+          return this.http
+            .post<AccessStatusDto[]>(`${API_BASE_URL}/identity/access-status/batch`, {
+              personIds: pageResult.items.map((p) => p.id),
+            })
+            .pipe(map((statuses) => ({ pageResult, statuses })));
         }),
       )
       .subscribe({
-        next: (views) => {
-          this.persons.set(views);
+        next: ({ pageResult, statuses }) => {
+          const statusByPersonId = new Map(statuses.map((s) => [s.personId, s]));
+          this.persons.set(
+            pageResult.items.map((person) => this.toView(person, statusByPersonId.get(person.id))),
+          );
+          this.total.set(pageResult.total);
+          this.page.set(pageResult.page);
           this.isLoading.set(false);
         },
         error: () => {
@@ -158,15 +212,15 @@ export class IdentityConsoleComponent implements OnInit {
       });
   }
 
-  private toView(person: PersonDto, status: AccessStatusDto): PersonView {
+  private toView(person: PersonDto, status?: AccessStatusDto): PersonView {
     return {
       id: person.id,
       fullName: `${person.firstName} ${person.lastName}`,
       nationalId: person.nationalId,
       personType: person.personType,
       externalRef: person.externalRef,
-      accessStatus: status.status,
-      blockReason: status.reasonCode ? `${status.reasonCode} — ${status.message}` : undefined,
+      accessStatus: status?.status ?? 'blocked',
+      blockReason: status?.reasonCode ? `${status.reasonCode} — ${status.message}` : undefined,
     };
   }
 }

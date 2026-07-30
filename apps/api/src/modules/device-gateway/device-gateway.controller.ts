@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { DeviceGatewayService } from './device-gateway.service';
 import {
   ProvisionDeviceDto,
@@ -6,7 +6,9 @@ import {
   IngestEventDto,
   HeartbeatDto,
 } from './dto/device-gateway.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('device-gateway')
 export class DeviceGatewayController {
   constructor(private readonly deviceGatewayService: DeviceGatewayService) {}

@@ -46,3 +46,7 @@ export interface QueryAccessStatusDto {
   personId: string;
   at?: string; // ISO string
 }
+
+export interface BatchAccessStatusDto {
+  personIds: string[];
+}

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { CredentialsService } from './credentials.service';
 import {
   IssueCredentialDto,
@@ -6,7 +6,9 @@ import {
   GenerateDynamicQRDto,
   VerifyCredentialDto,
 } from './dto/credentials.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('credentials')
 export class CredentialsController {
   constructor(private readonly credentialsService: CredentialsService) {}

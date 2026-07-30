@@ -37,8 +37,50 @@ describe('IdentityModule', () => {
     expect(person.firstName).toBe('Ana');
 
     const list = controller.getPersons('site-1');
-    expect(list.length).toBe(1);
-    expect(list[0]?.nationalId).toBe('1799887766');
+    expect(list.total).toBe(1);
+    expect(list.items[0]?.nationalId).toBe('1799887766');
+  });
+
+  it('paginates the persons list', () => {
+    for (let i = 0; i < 25; i++) {
+      controller.createPerson({
+        siteId: 'site-paginated',
+        personType: 'employee',
+        firstName: `Persona`,
+        lastName: `${i}`,
+        nationalId: `PAG-${i}`,
+      });
+    }
+
+    const firstPage = controller.getPersons('site-paginated', '1', '10');
+    expect(firstPage.total).toBe(25);
+    expect(firstPage.items).toHaveLength(10);
+
+    const secondPage = controller.getPersons('site-paginated', '2', '10');
+    expect(secondPage.items).toHaveLength(10);
+    expect(secondPage.items[0]?.nationalId).not.toBe(firstPage.items[0]?.nationalId);
+
+    const thirdPage = controller.getPersons('site-paginated', '3', '10');
+    expect(thirdPage.items).toHaveLength(5);
+  });
+
+  it('evaluates access status in batch, including unknown ids', () => {
+    const person = controller.createPerson({
+      siteId: 'site-batch',
+      personType: 'employee',
+      firstName: 'Carlos',
+      lastName: 'Ruiz',
+      nationalId: 'BATCH-1',
+    });
+
+    const results = controller.getAccessStatusBatch({
+      personIds: [person.id, 'unknown-person-id'],
+    });
+
+    expect(results).toHaveLength(2);
+    expect(results[0]?.personId).toBe(person.id);
+    expect(results[1]?.status).toBe('blocked');
+    expect((results[1] as { reasonCode: string }).reasonCode).toBe('NOT_FOUND');
   });
 
   it('prevents duplicate national ID per site', () => {

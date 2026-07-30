@@ -67,12 +67,17 @@ export class IdentityService {
     return person.props;
   }
 
-  public getPersons(siteId?: string) {
+  public getPersons(siteId?: string, page = 1, pageSize = 20) {
     let list = Array.from(this.personsMap.values());
     if (siteId) {
       list = list.filter((p) => p.siteId === siteId);
     }
-    return list.map((p) => p.props);
+
+    const total = list.length;
+    const start = (page - 1) * pageSize;
+    const items = list.slice(start, start + pageSize).map((p) => p.props);
+
+    return { items, total, page, pageSize };
   }
 
   public getPersonById(id: string) {
@@ -246,5 +251,21 @@ export class IdentityService {
     } else {
       return result.error;
     }
+  }
+
+  /** Batches access-status evaluation to avoid one HTTP round-trip per person. */
+  public evaluateAccessStatusBatch(personIds: string[]) {
+    return personIds.map((personId) => {
+      if (!this.personsMap.has(personId)) {
+        return {
+          status: 'blocked' as const,
+          personId,
+          evaluatedAt: new Date(),
+          reasonCode: 'NOT_FOUND',
+          message: `Person ${personId} not found`,
+        };
+      }
+      return this.evaluatePersonAccessStatus(personId);
+    });
   }
 }

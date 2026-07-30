@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { AccessRightsService } from './access-rights.service';
 import {
   CreateScheduleDto,
@@ -7,7 +7,9 @@ import {
   CreateGroupDto,
   AssignPersonToGroupDto,
 } from './dto/access-rights.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('access-rights')
 export class AccessRightsController {
   constructor(private readonly accessRightsService: AccessRightsService) {}

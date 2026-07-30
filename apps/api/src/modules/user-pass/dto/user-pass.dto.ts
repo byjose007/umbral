@@ -1,47 +1,57 @@
-export class LoginUserPassDto {
+import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
+
+export const LoginUserPassSchema = z.object({
   /** Person identifier (e.g. employee ID or UUID) */
-  personId!: string;
-  /** Hashed PIN (client derives PBKDF2 key before sending — never plaintext) */
-  pinHash!: string;
-}
+  personId: z.string().min(1),
+  /** Hashed PIN (client derives PBKDF2/SHA-256 key before sending — never plaintext) */
+  pinHash: z.string().min(1),
+});
+export class LoginUserPassDto extends createZodDto(LoginUserPassSchema) {}
 
-export class GetUserPassSeedDto {
-  personId!: string;
-}
+export const GetUserPassSeedSchema = z.object({
+  personId: z.string().min(1),
+});
+export class GetUserPassSeedDto extends createZodDto(GetUserPassSeedSchema) {}
 
-export class GetUserAccessHistoryDto {
-  personId!: string;
+export const GetUserAccessHistorySchema = z.object({
+  personId: z.string().min(1),
   /** Max number of entries to return (default: 20) */
-  limit?: number;
-}
+  limit: z.number().int().positive().optional(),
+});
+export class GetUserAccessHistoryDto extends createZodDto(GetUserAccessHistorySchema) {}
 
-export class IssueVisitorPassDto {
+export const IssueVisitorPassSchema = z.object({
   /** Person issuing the pass */
-  issuerPersonId!: string;
-  visitorName!: string;
-  visitorEmail?: string;
+  issuerPersonId: z.string().min(1),
+  visitorName: z.string().min(1).max(128),
+  visitorEmail: z.string().email().optional(),
   /** ISO 8601 start datetime */
-  validFrom!: string;
+  validFrom: z.string().min(1),
   /** ISO 8601 end datetime */
-  validTo!: string;
+  validTo: z.string().min(1),
   /** Maximum number of uses (default: 1) */
-  maxUses?: number;
-}
+  maxUses: z.number().int().positive().optional(),
+});
+export class IssueVisitorPassDto extends createZodDto(IssueVisitorPassSchema) {}
 
-export class GetVisitorPassesDto {
+export const GetVisitorPassesSchema = z.object({
   /** Person who issued the passes */
-  issuerPersonId!: string;
+  issuerPersonId: z.string().min(1),
   /** Filter by status: 'active' | 'used' | 'expired' | undefined (all) */
-  status?: string;
-}
+  status: z.string().optional(),
+});
+export class GetVisitorPassesDto extends createZodDto(GetVisitorPassesSchema) {}
 
-export class VerifyUserPassTokenDto {
+export const VerifyUserPassTokenSchema = z.object({
   /** Raw token string from the scanned QR code */
-  token!: string;
+  token: z.string().min(1),
   /** Seed secret for this person (resolved server-side) */
-  personId!: string;
-}
+  personId: z.string().min(1),
+});
+export class VerifyUserPassTokenDto extends createZodDto(VerifyUserPassTokenSchema) {}
 
-export class RecordVisitorPassUseDto {
-  visitorPassId!: string;
-}
+export const RecordVisitorPassUseSchema = z.object({
+  visitorPassId: z.string().min(1),
+});
+export class RecordVisitorPassUseDto extends createZodDto(RecordVisitorPassUseSchema) {}

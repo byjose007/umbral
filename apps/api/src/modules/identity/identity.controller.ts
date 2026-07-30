@@ -1,12 +1,15 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { IdentityService } from './identity.service';
 import {
   CreatePersonDto,
   CreateEmploymentPeriodDto,
   CreateAbsenceDto,
   CreatePersonDocumentDto,
+  BatchAccessStatusDto,
 } from './dto/identity.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('identity')
 export class IdentityController {
   constructor(private readonly identityService: IdentityService) {}
@@ -18,8 +21,16 @@ export class IdentityController {
   }
 
   @Get('persons')
-  getPersons(@Query('siteId') siteId?: string) {
-    return this.identityService.getPersons(siteId);
+  getPersons(
+    @Query('siteId') siteId?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.identityService.getPersons(
+      siteId,
+      page ? parseInt(page, 10) : undefined,
+      pageSize ? parseInt(pageSize, 10) : undefined,
+    );
   }
 
   @Get('persons/:id')
@@ -31,6 +42,11 @@ export class IdentityController {
   @Get('persons/:id/access-status')
   getPersonAccessStatus(@Param('id') id: string, @Query('at') at?: string) {
     return this.identityService.evaluatePersonAccessStatus(id, at);
+  }
+
+  @Post('access-status/batch')
+  getAccessStatusBatch(@Body() dto: BatchAccessStatusDto) {
+    return this.identityService.evaluateAccessStatusBatch(dto.personIds);
   }
 
   // Employment Periods

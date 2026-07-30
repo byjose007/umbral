@@ -1,10 +1,11 @@
 <ion-header [translucent]="true">
   <ion-toolbar color="dark">
     <ion-title>
-      🛡️ UMBRAL — Consola de Guardia PWA
+      <ion-icon name="shield-checkmark-outline" class="ion-margin-end"></ion-icon>
+      UMBRAL — Consola de Guardia PWA
     </ion-title>
     <ion-badge slot="end" color="success" class="offline-badge">
-      ⚡ Offline Ready (ES256 & CRL)
+      <ion-icon name="flash-outline"></ion-icon> Offline Ready (ES256 & CRL)
     </ion-badge>
     <ion-buttons slot="end">
       <ion-button (click)="onLogout()">Cerrar sesión</ion-button>
@@ -13,16 +14,20 @@
   <ion-toolbar color="light">
     <ion-segment [(ngModel)]="activeTab">
       <ion-segment-button value="scanner">
-        <ion-label>📷 Escáner QR</ion-label>
+        <ion-icon name="camera-outline"></ion-icon>
+        <ion-label>Escáner QR</ion-label>
       </ion-segment-button>
       <ion-segment-button value="contingency">
-        <ion-label>🔑 Contingencia</ion-label>
+        <ion-icon name="key-outline"></ion-icon>
+        <ion-label>Contingencia</ion-label>
       </ion-segment-button>
       <ion-segment-button value="muster">
-        <ion-label>🚨 Evacuación Muster</ion-label>
+        <ion-icon name="warning-outline"></ion-icon>
+        <ion-label>Evacuación Muster</ion-label>
       </ion-segment-button>
       <ion-segment-button value="alerts">
-        <ion-label>🔔 Alertas (LOPDP)</ion-label>
+        <ion-icon name="notifications-outline"></ion-icon>
+        <ion-label>Alertas (LOPDP)</ion-label>
       </ion-segment-button>
     </ion-segment>
   </ion-toolbar>
@@ -54,12 +59,16 @@
         </ion-item>
 
         <ion-button expand="block" color="primary" class="ion-margin-top" (click)="verifyScannedQR()">
-          🔍 Verificar Credencial Offline
+          <ion-icon name="search-outline" slot="start"></ion-icon> Verificar Credencial Offline
         </ion-button>
 
         <div *ngIf="scanResult" class="scan-result-box ion-margin-top" [ngClass]="scanResult.valid ? 'valid-pass' : 'invalid-pass'">
-          <h3 *ngIf="scanResult.valid">✅ ACCESO AUTORIZADO</h3>
-          <h3 *ngIf="!scanResult.valid">❌ ACCESO DENEGADO</h3>
+          <h3 *ngIf="scanResult.valid">
+            <ion-icon name="checkmark-circle-outline"></ion-icon> ACCESO AUTORIZADO
+          </h3>
+          <h3 *ngIf="!scanResult.valid">
+            <ion-icon name="close-circle-outline"></ion-icon> ACCESO DENEGADO
+          </h3>
 
           <p><strong>Persona ID:</strong> {{ scanResult.personId || 'Desconocido' }}</p>
           <p><strong>Motivo / Estado:</strong> {{ scanResult.reason }}</p>
@@ -91,14 +100,14 @@
               <p>Cédula: {{ occupant.documentNumber }} | Zona: {{ occupant.zoneId }}</p>
             </ion-label>
             <ion-button slot="end" color="warning" size="small" (click)="releaseGateManually(occupant)">
-              🔓 Liberar Garita
+              <ion-icon name="lock-open-outline" slot="start"></ion-icon> Liberar Garita
             </ion-button>
           </ion-item>
         </ion-list>
 
         <!-- Audit log records -->
         <div class="audit-history ion-margin-top" *ngIf="overrideLogs.length > 0">
-          <h4>📋 Logs de Auditoría Guardados Offline ({{ overrideLogs.length }})</h4>
+          <h4><ion-icon name="clipboard-outline"></ion-icon> Logs de Auditoría Guardados Offline ({{ overrideLogs.length }})</h4>
           <ul>
             <li *ngFor="let log of overrideLogs.slice(-3)">
               <strong>[{{ log.action }}]</strong> {{ log.doorId }} - Reason: {{ log.reason }} ({{ log.createdAt | date:'short' }})
@@ -113,7 +122,7 @@
   <div *ngIf="activeTab === 'muster'" class="muster-container">
     <ion-card>
       <ion-card-header>
-        <ion-card-title>🚨 Conteo de Evacuación Muster (Offline Roll)</ion-card-title>
+        <ion-card-title><ion-icon name="warning-outline"></ion-icon> Conteo de Evacuación Muster (Offline Roll)</ion-card-title>
       </ion-card-header>
       <ion-card-content>
         <p>En incendios o terremotos, genere e imprima el reporte instantáneo de quién está dentro del edificio sin red.</p>
@@ -134,8 +143,12 @@
         </div>
 
         <div class="export-actions ion-margin-top">
-          <ion-button color="success" size="small" (click)="exportMusterCsv()">📄 Exportar CSV</ion-button>
-          <ion-button color="tertiary" size="small" (click)="exportMusterJson()">💾 Exportar JSON</ion-button>
+          <ion-button color="success" size="small" (click)="exportMusterCsv()">
+            <ion-icon name="document-text-outline" slot="start"></ion-icon> Exportar CSV
+          </ion-button>
+          <ion-button color="tertiary" size="small" (click)="exportMusterJson()">
+            <ion-icon name="save-outline" slot="start"></ion-icon> Exportar JSON
+          </ion-button>
         </div>
 
         <pre *ngIf="musterExportText" class="export-preview ion-margin-top">{{ musterExportText }}</pre>
@@ -163,7 +176,7 @@
   <div *ngIf="activeTab === 'alerts'">
     <ion-card>
       <ion-card-header>
-        <ion-card-title>🔔 Feed de Alertas (Seudonimizado LOPDP DP-06)</ion-card-title>
+        <ion-card-title><ion-icon name="notifications-outline"></ion-icon> Feed de Alertas (Seudonimizado LOPDP DP-06)</ion-card-title>
       </ion-card-header>
       <ion-card-content>
         <p>Las identidades de personas involucradas en alarmas se presentan seudonimizadas por defecto para protección de datos personales.</p>
@@ -183,7 +196,7 @@
             </ion-label>
 
             <ion-button slot="end" color="warning" fill="outline" size="small" (click)="unmaskAlertIdentity(alertObj)">
-              👁️ Revelar Identidad (Auditado)
+              <ion-icon name="eye-outline" slot="start"></ion-icon> Revelar Identidad (Auditado)
             </ion-button>
           </ion-item>
         </ion-list>

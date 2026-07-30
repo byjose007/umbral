@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ComplianceService } from './compliance.service.js';
 import {
   CreateRetentionPolicyDto,
@@ -15,7 +15,12 @@ import {
   RecordPrivacyConsentDto,
 } from './dto/privacy.dto.js';
 import { ComplianceDataType, TargetAudience } from '@umbral/core';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin', 'supervisor')
 @Controller('compliance')
 export class ComplianceController {
   constructor(private readonly complianceService: ComplianceService) {}

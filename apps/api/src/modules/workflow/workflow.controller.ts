@@ -1,8 +1,13 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { AccessRequestStatus } from '@umbral/core';
 import { WorkflowService } from './workflow.service';
 import { AccessRequestDecisionDto, MoveToReviewDto } from './dto/workflow.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+// Bandeja interna de aprobación — requiere operador autenticado.
+// (`PortalController`, en cambio, es el portal público de solicitud para
+// proveedores/visitantes sin cuenta y NO lleva guard.)
+@UseGuards(JwtAuthGuard)
 @Controller('workflow/requests')
 export class WorkflowController {
   constructor(private readonly workflowService: WorkflowService) {}

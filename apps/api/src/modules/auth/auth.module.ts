@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
+import { OperatorsController } from './operators.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { RolesGuard } from './roles.guard';
@@ -15,7 +16,7 @@ import { JWT_SECRET } from './jwt-secret';
       signOptions: { expiresIn: '15m' },
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, OperatorsController],
   providers: [AuthService, JwtStrategy, RolesGuard],
   exports: [AuthService],
 })

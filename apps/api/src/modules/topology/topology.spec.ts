@@ -14,6 +14,7 @@ describe('Topology Module (NestJS API)', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [TopologyModule],
     }).compile();
+    await module.init(); // triggers OnModuleInit (seeds the default organization)
 
     service = module.get<TopologyService>(TopologyService);
     controller = module.get<TopologyController>(TopologyController);

@@ -1,16 +1,18 @@
 import { ok, err, Result } from 'neverthrow';
 import { DomainError } from './errors.js';
+import { Organization, OrganizationProps } from './organization.entity.js';
 import { LockProfile, LockProfileProps } from './lock-profile.vo.js';
 import { Site, SiteProps } from './site.entity.js';
 import { Zone, ZoneProps } from './zone.entity.js';
 import { Controller, ControllerProps } from './controller.entity.js';
 import { Door, DoorProps } from './door.entity.js';
 import { Reader, ReaderProps } from './reader.entity.js';
-import { makeControllerId, makeDoorId, makeLockProfileId, makeReaderId, makeSiteId, makeZoneId } from './ids.js';
+import { makeControllerId, makeDoorId, makeLockProfileId, makeOrganizationId, makeReaderId, makeSiteId, makeZoneId } from './ids.js';
 
 export interface TopologyExportSchema {
   version: string;
   exportedAt: string;
+  organizations: OrganizationProps[];
   sites: SiteProps[];
   zones: ZoneProps[];
   lockProfiles: LockProfileProps[];
@@ -20,6 +22,7 @@ export interface TopologyExportSchema {
 }
 
 export interface ValidatedTopologyConfig {
+  organizations: Organization[];
   sites: Site[];
   zones: Zone[];
   lockProfiles: LockProfile[];
@@ -32,6 +35,7 @@ export function exportTopologyConfig(config: ValidatedTopologyConfig): TopologyE
   return {
     version: '1.0',
     exportedAt: new Date().toISOString(),
+    organizations: config.organizations.map((o) => o.props),
     sites: config.sites.map((s) => s.props),
     zones: config.zones.map((z) => z.props),
     lockProfiles: config.lockProfiles.map((lp) => lp.props),
@@ -46,9 +50,16 @@ export function importTopologyConfig(data: TopologyExportSchema): Result<Validat
     return err(new DomainError('INVALID_EXPORT_VERSION', 'Unsupported topology export schema version'));
   }
 
+  const organizations: Organization[] = [];
+  for (const o of data.organizations || []) {
+    const res = Organization.create({ ...o, id: makeOrganizationId(o.id) });
+    if (res.isErr()) return err(res.error);
+    organizations.push(res.value);
+  }
+
   const sites: Site[] = [];
   for (const s of data.sites || []) {
-    const res = Site.create({ ...s, id: makeSiteId(s.id) });
+    const res = Site.create({ ...s, id: makeSiteId(s.id), organizationId: makeOrganizationId(s.organizationId) });
     if (res.isErr()) return err(res.error);
     sites.push(res.value);
   }
@@ -102,6 +113,7 @@ export function importTopologyConfig(data: TopologyExportSchema): Result<Validat
   }
 
   return ok({
+    organizations,
     sites,
     zones,
     lockProfiles,

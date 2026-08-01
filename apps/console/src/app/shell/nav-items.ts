@@ -14,25 +14,25 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Operación',
+    label: 'Acceso y Usuarios',
     items: [
-      { path: 'topology', label: 'Topología' },
-      { path: 'identity', label: 'Identidades' },
-      { path: 'credentials', label: 'Credenciales' },
-      { path: 'access-rights', label: 'Niveles de Acceso' },
+      { path: 'identity', label: '👥 Usuarios y Pases Móviles' },
+      { path: 'topology', label: '🚪 Sitios y Puertas' },
+      { path: 'credentials', label: '💳 Credenciales Físicas' },
+      { path: 'access-rights', label: '🔑 Permisos de Acceso' },
     ],
   },
   {
-    label: 'Seguridad',
+    label: 'Monitoreo',
     items: [
-      { path: 'alerting', label: 'Alertas' },
-      { path: 'events-audit', label: 'Eventos y Auditoría' },
-      { path: 'device-gateway', label: 'Dispositivos' },
+      { path: 'alerting', label: '⚠️ Alertas de Seguridad' },
+      { path: 'events-audit', label: '📋 Histórico de Eventos' },
+      { path: 'device-gateway', label: '📟 Lectores y Equipos' },
     ],
   },
   {
-    label: 'Gestión',
-    items: [{ path: 'operators', label: 'Operadores' }],
+    label: 'Administración',
+    items: [{ path: 'operators', label: '🛡️ Personal de Garita y Admins' }],
     roles: ['admin'],
   },
 ];

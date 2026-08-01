@@ -7,17 +7,53 @@ import {
   GetVisitorPassesDto,
   VerifyUserPassTokenDto,
   RecordVisitorPassUseDto,
+  GenerateActivationCodeDto,
+  EnrollUserPassDto,
+  RevokeUserPassDto,
+  RecordAccessEventDto,
 } from './dto/user-pass.dto';
 
 @Controller('user-pass')
 export class UserPassController {
   constructor(private readonly userPassService: UserPassService) {}
 
+  /** POST /user-pass/access-event — record a scan/access event from Guard app */
+  @Post('access-event')
+  recordAccessEvent(@Body() dto: RecordAccessEventDto) {
+    this.userPassService.recordAccessEvent(
+      dto.personId,
+      dto.doorLabel || 'Garita Principal',
+      dto.eventType,
+      dto.granted,
+      dto.isDuress ?? false,
+    );
+    return { success: true };
+  }
+
   /** POST /user-pass/login — authenticate and retrieve offline seed */
   @Post('login')
   login(@Body() dto: LoginUserPassDto) {
     return this.userPassService.login(dto);
   }
+
+  /** POST /user-pass/generate-activation — generate 6-digit activation code (Admin) */
+  @Post('generate-activation')
+  generateActivationCode(@Body() dto: GenerateActivationCodeDto) {
+    return this.userPassService.generateActivationCode(dto.personId);
+  }
+
+  /** POST /user-pass/enroll — enroll user pass with activation code and set 4-digit PIN */
+  @Post('enroll')
+  enroll(@Body() dto: EnrollUserPassDto) {
+    return this.userPassService.enroll(dto);
+  }
+
+  /** POST /user-pass/revoke — revoke pass seed and generate new activation code (Admin) */
+  @Post('revoke')
+  revoke(@Body() dto: RevokeUserPassDto) {
+    return this.userPassService.revoke(dto.personId);
+  }
+
 
   /** GET /user-pass/seed/:personId — fetch current seed for PWA refresh */
   @Get('seed/:personId')

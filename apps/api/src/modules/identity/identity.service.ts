@@ -23,12 +23,91 @@ import {
 } from './dto/identity.dto';
 import { v4 as uuidv4 } from './uuid';
 
+import { OnModuleInit } from '@nestjs/common';
+
 @Injectable()
-export class IdentityService {
+export class IdentityService implements OnModuleInit {
   private readonly personsMap = new Map<string, Person>();
   private readonly employmentPeriodsMap = new Map<string, EmploymentPeriod[]>();
   private readonly absencesMap = new Map<string, Absence[]>();
   private readonly documentsMap = new Map<string, PersonDocument[]>();
+
+  onModuleInit() {
+    if (this.personsMap.size > 0) return;
+
+    this.seedPerson({
+      id: 'person-demo-001',
+      siteId: 'site-default',
+      personType: 'employee',
+      firstName: 'Byron José',
+      lastName: 'López',
+      nationalId: '12345678-9',
+      email: 'byron@umbral.local',
+      externalRef: 'EMP-001',
+    });
+
+    this.seedPerson({
+      id: 'person-demo-002',
+      siteId: 'site-default',
+      personType: 'employee',
+      firstName: 'María Elena',
+      lastName: 'Rodríguez',
+      nationalId: '98765432-1',
+      email: 'maria@umbral.local',
+      externalRef: 'EMP-002',
+    });
+
+    this.seedPerson({
+      id: 'person-demo-003',
+      siteId: 'site-default',
+      personType: 'contractor',
+      firstName: 'Carlos Eduardo',
+      lastName: 'Gómez',
+      nationalId: '45678912-3',
+      email: 'carlos@proveedor.local',
+      externalRef: 'CON-003',
+    });
+  }
+
+  private seedPerson(input: {
+    id: string;
+    siteId: string;
+    personType: 'employee' | 'contractor' | 'visitor';
+    firstName: string;
+    lastName: string;
+    nationalId: string;
+    email: string;
+    externalRef: string;
+  }) {
+    const personRes = Person.create({
+      id: makePersonId(input.id),
+      siteId: makeSiteId(input.siteId),
+      personType: input.personType,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      nationalId: input.nationalId,
+      email: input.email,
+      externalRef: input.externalRef,
+    });
+    if (personRes.isErr()) return;
+    const person = personRes.value;
+
+    const periodRes = EmploymentPeriod.create({
+      id: makeEmploymentPeriodId(uuidv4()),
+      personId: person.id,
+      contractType: 'full_time',
+      validFrom: new Date('2025-01-01'),
+      validUntil: null,
+      jobTitle: 'Desarrollador Principal',
+      department: 'Tecnología',
+    });
+    const period = periodRes.isOk() ? [periodRes.value] : [];
+
+    this.personsMap.set(person.id, person);
+    this.employmentPeriodsMap.set(person.id, period);
+    this.absencesMap.set(person.id, []);
+    this.documentsMap.set(person.id, []);
+  }
 
   // Person CRUD
   public createPerson(dto: CreatePersonDto) {
@@ -52,6 +131,7 @@ export class IdentityService {
       externalRef: dto.externalRef,
       email: dto.email,
       phone: dto.phone,
+      photoUrl: dto.photoUrl,
     });
 
     if (res.isErr()) {

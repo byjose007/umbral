@@ -11,6 +11,7 @@ export interface GuardSyncCache {
     documentNumber: string;
     zoneId: string;
     status: 'present_inside' | 'evacuated_accounted' | 'missing';
+    photoUrl?: string;
   }>;
 }
 
@@ -25,12 +26,22 @@ export interface OverrideLogRecord {
   createdAt: string;
 }
 
+export interface GuardScanLogRecord {
+  id: string;
+  personId: string;
+  token: string;
+  granted: boolean;
+  reason: string;
+  scannedAt: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class GuardStorageService {
   private readonly CACHE_KEY = 'umbral_guard_sync_cache';
   private readonly OVERRIDE_LOGS_KEY = 'umbral_guard_override_logs';
+  private readonly SCAN_LOGS_KEY = 'umbral_guard_scan_logs';
 
   saveSyncCache(cache: GuardSyncCache): void {
     localStorage.setItem(this.CACHE_KEY, JSON.stringify(cache));
@@ -74,6 +85,17 @@ export class GuardStorageService {
 
   getOverrideLogs(): OverrideLogRecord[] {
     const raw = localStorage.getItem(this.OVERRIDE_LOGS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  saveScanLog(log: GuardScanLogRecord): void {
+    const logs = this.getScanLogs();
+    logs.unshift(log);
+    localStorage.setItem(this.SCAN_LOGS_KEY, JSON.stringify(logs.slice(0, 100)));
+  }
+
+  getScanLogs(): GuardScanLogRecord[] {
+    const raw = localStorage.getItem(this.SCAN_LOGS_KEY);
     return raw ? JSON.parse(raw) : [];
   }
 }

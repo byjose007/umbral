@@ -33,6 +33,13 @@ interface SeedRecord {
   issuedAt: Date;
 }
 
+export interface ActivationCodeRecord {
+  personId: string;
+  code: string;
+  expiresAt: Date;
+  used: boolean;
+}
+
 export interface AccessHistoryEntry {
   id: string;
   personId: string;
@@ -61,15 +68,109 @@ export interface VisitorPassRecord {
 @Injectable()
 export class UserPassService {
   private readonly seedStore = new Map<string, SeedRecord>(); // personId → SeedRecord
+  private readonly activationCodeStore = new Map<string, ActivationCodeRecord>(); // personId → ActivationCodeRecord
   private readonly historyStore = new Map<string, AccessHistoryEntry[]>(); // personId → entries
   private readonly visitorPassStore = new Map<string, VisitorPassRecord>(); // id → record
 
-  // ─── Authentication & Seed Provisioning ───────────────────────────────────
+  constructor() {
+    // Pre-provision a default activation code for the demo user ('person-demo-001')
+    this.activationCodeStore.set('person-demo-001', {
+      personId: 'person-demo-001',
+      code: '123456',
+      expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+      used: false,
+    });
+
+    // Pre-provision initial access history for demo user ('person-demo-001')
+    this.historyStore.set('person-demo-001', [
+      { id: '4', personId: 'person-demo-001', doorLabel: 'Terraza — Piso 12', eventType: 'ENTRY', granted: true, isDuress: false, occurredAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
+      { id: '3', personId: 'person-demo-001', doorLabel: 'Sala de Servidores — Piso 8', eventType: 'DENIED', granted: false, isDuress: false, occurredAt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      { id: '2', personId: 'person-demo-001', doorLabel: 'Parqueadero B2 — Acceso Vehículos', eventType: 'EXIT', granted: true, isDuress: false, occurredAt: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+      { id: '1', personId: 'person-demo-001', doorLabel: 'Entrada Principal — Lobby', eventType: 'ENTRY', granted: true, isDuress: false, occurredAt: new Date(Date.now() - 5 * 60 * 1000) },
+    ]);
+  }
+
+  // ─── Authentication, Enrollment & Seed Provisioning ──────────────────────
 
   /**
-   * Authenticates a user and provisions/retrieves their offline pass seed.
-   * On first login the seed is generated; subsequent logins return the cached seed.
-   * In production: validate pinHash against IdP; derive AES key; wrap seed in WebCrypto.
+   * Generates a 6-digit activation code for a given person (admin endpoint).
+   */
+  generateActivationCode(personId: string): {
+    personId: string;
+    activationCode: string;
+    expiresAt: Date;
+  } {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 24 * 3600 * 1000); // 24h validity
+    const record: ActivationCodeRecord = { personId, code, expiresAt, used: false };
+    this.activationCodeStore.set(personId, record);
+    return { personId, activationCode: code, expiresAt };
+  }
+
+  /**
+   * Enrolls a person's User Pass using a valid 6-digit activation code and sets their 4-digit PIN.
+   */
+  enroll(dto: { personId: string; activationCode: string; pinHash: string }): {
+    seedSecret: string;
+    encryptedSeed: string;
+    salt: string;
+  } {
+    const activation = this.activationCodeStore.get(dto.personId);
+
+    if (
+      !activation ||
+      activation.code !== dto.activationCode ||
+      activation.used ||
+      activation.expiresAt.getTime() < Date.now()
+    ) {
+      throw new UnauthorizedException(
+        'Código de activación inválido, expirado o ya utilizado.',
+      );
+    }
+
+    activation.used = true;
+
+    const seedSecret = `UMBRAL-SEED-${uuidv4()}`;
+    const salt = `SALT-${uuidv4()}`;
+    const record: SeedRecord = {
+      id: uuidv4(),
+      personId: dto.personId,
+      pinHash: dto.pinHash,
+      seedSecret,
+      encryptedSeed: `ENC::${seedSecret}`,
+      salt,
+      status: 'active',
+      issuedAt: new Date(),
+    };
+
+    this.seedStore.set(dto.personId, record);
+
+    return {
+      seedSecret: record.seedSecret,
+      encryptedSeed: record.encryptedSeed,
+      salt: record.salt,
+    };
+  }
+
+  /**
+   * Revokes an active User Pass seed and generates a fresh activation code for re-enrollment.
+   */
+  revoke(personId: string): {
+    personId: string;
+    status: 'revoked';
+    newActivationCode: string;
+  } {
+    const existing = this.seedStore.get(personId);
+    if (existing) {
+      existing.status = 'revoked';
+    }
+
+    const { activationCode } = this.generateActivationCode(personId);
+    return { personId, status: 'revoked', newActivationCode: activationCode };
+  }
+
+  /**
+   * Authenticates a user with their PIN. Device must already be enrolled.
    */
   login(dto: LoginUserPassDto): {
     seedSecret: string;
@@ -82,42 +183,29 @@ export class UserPassService {
 
     const existing = this.seedStore.get(dto.personId);
 
-    let record: SeedRecord;
     if (!existing) {
-      // First login — provision a new seed and remember the PIN hash it was set up with
-      const seedSecret = `UMBRAL-SEED-${uuidv4()}`; // In prod: random 256-bit via WebCrypto
-      const salt = `SALT-${uuidv4()}`;
-      record = {
-        id: uuidv4(),
-        personId: dto.personId,
-        pinHash: dto.pinHash,
-        seedSecret,
-        encryptedSeed: `ENC::${seedSecret}`, // In prod: AES-GCM encrypted blob
-        salt,
-        status: 'active',
-        issuedAt: new Date(),
-      };
-      this.seedStore.set(dto.personId, record);
-    } else {
-      record = existing;
-    }
-
-    if (record.status !== 'active') {
       throw new UnauthorizedException(
-        `Pass seed for person ${dto.personId} is revoked`,
+        'Dispositivo no activado. Se requiere enrolamiento con código de activación de 6 dígitos.',
       );
     }
 
-    if (record.pinHash !== dto.pinHash) {
+    if (existing.status !== 'active') {
+      throw new UnauthorizedException(
+        'El pase de acceso fue revocado. Se requiere un nuevo código de activación.',
+      );
+    }
+
+    if (existing.pinHash !== dto.pinHash) {
       throw new UnauthorizedException('PIN incorrecto');
     }
 
     return {
-      seedSecret: record.seedSecret,
-      encryptedSeed: record.encryptedSeed,
-      salt: record.salt,
+      seedSecret: existing.seedSecret,
+      encryptedSeed: existing.encryptedSeed,
+      salt: existing.salt,
     };
   }
+
 
   /**
    * Returns the current pass seed for a person (used by the PWA to refresh the cached seed).

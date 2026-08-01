@@ -24,6 +24,7 @@ export const persons = pgTable(
     externalRef: varchar('external_ref', { length: 128 }),
     email: varchar('email', { length: 256 }),
     phone: varchar('phone', { length: 64 }),
+    photoUrl: varchar('photo_url', { length: 1024 }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },

@@ -28,11 +28,21 @@ describe('UserPassModule', () => {
     expect(service).toBeDefined();
   });
 
-  // ─── Login & Seed Provisioning ──────────────────────────────────────────────
+  function enrollPerson(personId: string, pinHash = 'HASH') {
+    const { activationCode } = controller.generateActivationCode({ personId });
+    return controller.enroll({ personId, activationCode, pinHash });
+  }
 
-  it('provisions a new seed on first login and returns encrypted seed & salt', () => {
-    const result = controller.login({
-      personId: 'person-001',
+  // ─── Activation, Enrollment & Seed Provisioning ───────────────────────────
+
+  it('generates an activation code and enrolls a new person with a PIN hash', () => {
+    const personId = 'person-001';
+    const { activationCode } = controller.generateActivationCode({ personId });
+    expect(activationCode).toHaveLength(6);
+
+    const result = controller.enroll({
+      personId,
+      activationCode,
       pinHash: 'PBKDF2_HASH_PLACEHOLDER',
     });
 
@@ -41,13 +51,29 @@ describe('UserPassModule', () => {
     expect(result.salt).toBeDefined();
   });
 
-  it('returns the same seed on subsequent logins (idempotent provisioning)', () => {
-    const dto = { personId: 'person-002', pinHash: 'PBKDF2_HASH' };
-    const first = controller.login(dto);
-    const second = controller.login(dto);
+  it('rejects login for an un-enrolled person', () => {
+    expect(() =>
+      controller.login({ personId: 'unenrolled-person', pinHash: 'HASH' }),
+    ).toThrow(UnauthorizedException);
+  });
 
-    expect(first.seedSecret).toBe(second.seedSecret);
-    expect(first.encryptedSeed).toBe(second.encryptedSeed);
+  it('rejects enrollment with an invalid or expired activation code', () => {
+    expect(() =>
+      controller.enroll({
+        personId: 'person-001',
+        activationCode: '000000',
+        pinHash: 'HASH',
+      }),
+    ).toThrow(UnauthorizedException);
+  });
+
+  it('allows logging in after enrollment', () => {
+    const personId = 'person-002';
+    const enrolled = enrollPerson(personId, 'PBKDF2_HASH');
+    const loggedIn = controller.login({ personId, pinHash: 'PBKDF2_HASH' });
+
+    expect(loggedIn.seedSecret).toBe(enrolled.seedSecret);
+    expect(loggedIn.encryptedSeed).toBe(enrolled.encryptedSeed);
   });
 
   it('rejects login without personId or pinHash', () => {
@@ -56,25 +82,41 @@ describe('UserPassModule', () => {
     );
   });
 
-  it('rejects a second login with the wrong PIN hash', () => {
+  it('rejects login with the wrong PIN hash', () => {
     const personId = 'person-pin-01';
-    controller.login({ personId, pinHash: 'CORRECT_HASH' });
+    enrollPerson(personId, 'CORRECT_HASH');
 
     expect(() =>
       controller.login({ personId, pinHash: 'WRONG_HASH' }),
     ).toThrow(UnauthorizedException);
   });
 
-  it('accepts a second login with the same PIN hash used at provisioning', () => {
-    const personId = 'person-pin-02';
-    const first = controller.login({ personId, pinHash: 'CORRECT_HASH' });
-    const second = controller.login({ personId, pinHash: 'CORRECT_HASH' });
+  it('revokes a pass and prevents further login until re-enrolled', () => {
+    const personId = 'person-revoke-01';
+    enrollPerson(personId, 'PIN_1234');
 
-    expect(second.seedSecret).toBe(first.seedSecret);
+    const revoked = controller.revoke({ personId });
+    expect(revoked.status).toBe('revoked');
+    expect(revoked.newActivationCode).toHaveLength(6);
+
+    expect(() => controller.login({ personId, pinHash: 'PIN_1234' })).toThrow(
+      UnauthorizedException,
+    );
+
+    // Re-enroll with the new activation code
+    controller.enroll({
+      personId,
+      activationCode: revoked.newActivationCode,
+      pinHash: 'PIN_5678',
+    });
+
+    const loggedIn = controller.login({ personId, pinHash: 'PIN_5678' });
+    expect(loggedIn.seedSecret).toBeDefined();
   });
 
   it('retrieves seed via GET seed/:personId after login', () => {
     const personId = 'person-003';
+    enrollPerson(personId, 'HASH');
     const loginResult = controller.login({ personId, pinHash: 'HASH' });
     const seedResult = controller.getSeed(personId);
 
@@ -91,6 +133,7 @@ describe('UserPassModule', () => {
 
   it('verifies a valid normal-mode token and returns valid=true', () => {
     const personId = 'person-004';
+    enrollPerson(personId, 'HASH');
     const { seedSecret } = controller.login({ personId, pinHash: 'HASH' });
 
     // Generate a token using the same seed the service provisioned (static import)
@@ -103,6 +146,7 @@ describe('UserPassModule', () => {
 
   it('returns invalid for a tampered token', () => {
     const personId = 'person-005';
+    enrollPerson(personId, 'HASH');
     const { seedSecret } = controller.login({ personId, pinHash: 'HASH' });
 
     const { token } = generateUserPassToken(seedSecret, personId);
@@ -114,6 +158,7 @@ describe('UserPassModule', () => {
   // ─── Access History ─────────────────────────────────────────────────────────
 
   it('returns empty history for a new user', () => {
+    enrollPerson('person-006', 'HASH');
     controller.login({ personId: 'person-006', pinHash: 'HASH' });
     const history = controller.getAccessHistory('person-006');
     expect(history).toHaveLength(0);
@@ -121,6 +166,7 @@ describe('UserPassModule', () => {
 
   it('records and retrieves door access events', () => {
     const personId = 'person-007';
+    enrollPerson(personId, 'HASH');
     controller.login({ personId, pinHash: 'HASH' });
 
     service.recordAccessEvent(personId, 'Lobby Main', 'ENTRY', true);
@@ -136,6 +182,7 @@ describe('UserPassModule', () => {
 
   it('issues a visitor pass and returns a share URL', () => {
     const personId = 'person-008';
+    enrollPerson(personId, 'HASH');
     controller.login({ personId, pinHash: 'HASH' });
 
     const now = new Date();
@@ -158,6 +205,7 @@ describe('UserPassModule', () => {
 
   it('rejects a visitor pass with validTo in the past', () => {
     const personId = 'person-009';
+    enrollPerson(personId, 'HASH');
     controller.login({ personId, pinHash: 'HASH' });
 
     const past = new Date(Date.now() - 3600 * 1000);
@@ -173,6 +221,7 @@ describe('UserPassModule', () => {
 
   it('lists visitor passes filtered by status', () => {
     const personId = 'person-010';
+    enrollPerson(personId, 'HASH');
     controller.login({ personId, pinHash: 'HASH' });
 
     const now = new Date();
@@ -196,6 +245,7 @@ describe('UserPassModule', () => {
 
   it('records a visitor pass use and reduces remaining uses', () => {
     const personId = 'person-011';
+    enrollPerson(personId, 'HASH');
     controller.login({ personId, pinHash: 'HASH' });
 
     const now = new Date();
@@ -212,3 +262,4 @@ describe('UserPassModule', () => {
     expect(result.status).toBe('active');
   });
 });
+

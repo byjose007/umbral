@@ -1,14 +1,12 @@
 /**
- * Maps UMBRAL's shared design tokens (packages/design/tokens.css) onto Ionic's
- * native CSS variable theming API — the idiomatic way to theme Ionic instead
- * of fighting its base styles with Tailwind overrides.
- * See: https://ionicframework.com/docs/theming/
+ * Mapeo de tokens de diseño de UMBRAL para Ionic Framework.
+ * Modo Claro por defecto con soporte dinámico para Modo Oscuro vía [data-theme='dark'].
  */
 
 @import '@umbral/design/tokens.css';
 
 :root {
-  /* Brand (amber) mapped to Ionic's primary color */
+  /* Marca (Ámbar) */
   --ion-color-primary: var(--umbral-accent);
   --ion-color-primary-rgb: 217, 164, 65;
   --ion-color-primary-contrast: var(--umbral-accent-text);
@@ -30,7 +28,59 @@
   --ion-color-success-shade: #2eba87;
   --ion-color-success-tint: #48d8a3;
 
-  /* Base surfaces — dark-first, matching the console */
+  /* MODO CLARO POR DEFECTO */
+  --umbral-bg: #f8fafc;
+  --umbral-surface: #ffffff;
+  --umbral-surface-2: #f1f5f9;
+  --umbral-surface-hover: #e2e8f0;
+  --umbral-border: #cbd5e1;
+  --umbral-border-strong: #94a3b8;
+
+  --umbral-text: #0f172a;
+  --umbral-text-muted: #475569;
+  --umbral-text-faint: #64748b;
+
+  --umbral-accent-text: #1a1406;
+  --umbral-success-bg: #ecfdf5;
+  --umbral-warning-bg: #fffbeb;
+  --umbral-danger-bg: #fef2f2;
+
+  --ion-background-color: var(--umbral-bg);
+  --ion-background-color-rgb: 248, 250, 252;
+  --ion-text-color: var(--umbral-text);
+  --ion-text-color-rgb: 15, 23, 42;
+
+  --ion-toolbar-background: var(--umbral-surface);
+  --ion-toolbar-color: var(--umbral-text);
+  --ion-toolbar-border-color: var(--umbral-border);
+
+  --ion-item-background: var(--umbral-surface);
+  --ion-card-background: var(--umbral-surface);
+  --ion-border-color: var(--umbral-border);
+
+  --ion-tab-bar-background: var(--umbral-surface);
+  --ion-tab-bar-color: var(--umbral-text-muted);
+  --ion-tab-bar-color-selected: var(--umbral-accent);
+}
+
+/* OPT-IN MODO OSCURO (ACTIVADO DINÁMICAMENTE VÍA TOGGLE) */
+:root[data-theme='dark'] {
+  --umbral-bg: #0f1115;
+  --umbral-surface: #171a21;
+  --umbral-surface-2: #1f232c;
+  --umbral-surface-hover: #262b36;
+  --umbral-border: #2a2f3a;
+  --umbral-border-strong: #3a4150;
+
+  --umbral-text: #e6e8ec;
+  --umbral-text-muted: #9aa1ad;
+  --umbral-text-faint: #6b7280;
+
+  --umbral-accent-text: #1a1406;
+  --umbral-success-bg: #123128;
+  --umbral-warning-bg: #3a2a0f;
+  --umbral-danger-bg: #3a1618;
+
   --ion-background-color: var(--umbral-bg);
   --ion-background-color-rgb: 15, 17, 21;
   --ion-text-color: var(--umbral-text);

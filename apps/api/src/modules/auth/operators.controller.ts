@@ -25,4 +25,10 @@ export class OperatorsController {
   update(@Param('id') id: string, @Body() dto: UpdateOperatorDto) {
     return this.authService.updateOperator(id, dto);
   }
+
+  @Post(':id/reset-password')
+  resetPassword(@Param('id') id: string) {
+    return this.authService.resetOperatorPassword(id);
+  }
 }
+

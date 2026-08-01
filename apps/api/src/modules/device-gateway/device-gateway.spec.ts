@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
+import { DeviceGatewayModule } from './device-gateway.module';
 import { DeviceGatewayController } from './device-gateway.controller';
 import { DeviceGatewayService } from './device-gateway.service';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
@@ -10,9 +11,10 @@ describe('DeviceGatewayModule', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [DeviceGatewayController],
-      providers: [DeviceGatewayService],
+      imports: [DeviceGatewayModule],
     }).compile();
+    // Intentionally not calling module.init() — these are pure unit tests against the in-memory
+    // service/controller and must not require a live MQTT broker connection.
 
     controller = module.get<DeviceGatewayController>(DeviceGatewayController);
     service = module.get<DeviceGatewayService>(DeviceGatewayService);

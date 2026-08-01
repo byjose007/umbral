@@ -15,6 +15,8 @@ export interface PersonProps {
   readonly externalRef?: string | null;
   readonly email?: string | null;
   readonly phone?: string | null;
+  /** URL (or data: URI) of the enrolled person's photo, shown to guards on a successful scan to deter QR lending. */
+  readonly photoUrl?: string | null;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }
@@ -52,6 +54,7 @@ export class Person {
       externalRef: props.externalRef?.trim() || null,
       email: props.email?.trim() || null,
       phone: props.phone?.trim() || null,
+      photoUrl: props.photoUrl?.trim() || null,
       createdAt: props.createdAt ?? new Date(),
       updatedAt: props.updatedAt ?? new Date(),
     }));
@@ -67,4 +70,5 @@ export class Person {
   get externalRef(): string | null { return this.props.externalRef ?? null; }
   get email(): string | null { return this.props.email ?? null; }
   get phone(): string | null { return this.props.phone ?? null; }
+  get photoUrl(): string | null { return this.props.photoUrl ?? null; }
 }

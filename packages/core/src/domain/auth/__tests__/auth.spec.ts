@@ -1,16 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { Operator } from '../operator.entity.js';
 import { makeOperatorId } from '../ids.js';
-import { makeSiteId } from '../../topology/ids.js';
+import { makeSiteId, makeOrganizationId } from '../../topology/ids.js';
 
 describe('Auth Domain', () => {
   const siteId = makeSiteId('site-01');
+  const organizationId = makeOrganizationId('org-01');
   const operatorId = makeOperatorId('operator-01');
 
   it('creates an Operator entity correctly', () => {
     const res = Operator.create({
       id: operatorId,
       siteId,
+      organizationId,
       fullName: 'Ana Torres',
       email: 'Ana.Torres@umbral.local',
       passwordHash: 'hashed',
@@ -28,6 +30,7 @@ describe('Auth Domain', () => {
     const res = Operator.create({
       id: operatorId,
       siteId,
+      organizationId,
       fullName: 'Ana Torres',
       email: 'not-an-email',
       passwordHash: 'hashed',
@@ -41,6 +44,7 @@ describe('Auth Domain', () => {
     const res = Operator.create({
       id: operatorId,
       siteId,
+      organizationId,
       fullName: 'Ana Torres',
       email: 'ana@umbral.local',
       passwordHash: 'hashed',
@@ -54,6 +58,7 @@ describe('Auth Domain', () => {
     const res = Operator.create({
       id: operatorId,
       siteId,
+      organizationId,
       fullName: 'Ana Torres',
       email: 'ana@umbral.local',
       passwordHash: 'hashed',
@@ -71,6 +76,7 @@ describe('Auth Domain', () => {
     const operator = Operator.create({
       id: operatorId,
       siteId,
+      organizationId,
       fullName: 'Ana Torres',
       email: 'ana@umbral.local',
       passwordHash: 'hashed',

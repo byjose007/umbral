@@ -1,21 +1,33 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
+import { GuardPwaModule } from './guard-pwa.module';
 import { GuardPwaController } from './guard-pwa.controller';
 import { GuardPwaService } from './guard-pwa.service';
+import { IdentityService } from '../identity/identity.service';
+import { TopologyService } from '../topology/topology.service';
 import { generateOfflineDynamicQRToken } from '@umbral/core';
+
+const DEFAULT_ORG_ID = 'org-default';
+const DEFAULT_ORG_SEED_SECRET = 'secret-key-12345678901234567890';
+const fakeReq = (overrides: Partial<Record<string, unknown>> = {}) =>
+  ({ user: { id: 'op-1', siteId: 'site-default', organizationId: DEFAULT_ORG_ID, role: 'guardia', assignedReaderId: null, ...overrides } }) as any;
 
 describe('GuardPwaModule', () => {
   let controller: GuardPwaController;
   let service: GuardPwaService;
+  let identityService: IdentityService;
+  let topologyService: TopologyService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [GuardPwaController],
-      providers: [GuardPwaService],
+      imports: [GuardPwaModule],
     }).compile();
+    await module.init(); // triggers OnModuleInit on TopologyModule (seeds the default organization)
 
     controller = module.get<GuardPwaController>(GuardPwaController);
     service = module.get<GuardPwaService>(GuardPwaService);
+    identityService = module.get<IdentityService>(IdentityService);
+    topologyService = module.get<TopologyService>(TopologyService);
   });
 
   it('should be defined', () => {
@@ -24,7 +36,7 @@ describe('GuardPwaModule', () => {
   });
 
   it('should return sync data including occupancy, CRL and seed secret', () => {
-    const data = controller.getSyncData('SITE-MAIN');
+    const data = controller.getSyncData('SITE-MAIN', fakeReq());
     expect(data.siteId).toBe('SITE-MAIN');
     expect(data.seedSecret).toBeDefined();
     expect(data.crlList).toBeInstanceOf(Array);
@@ -81,8 +93,48 @@ describe('GuardPwaModule', () => {
     const seed = 'secret-key-12345678901234567890';
     const { token } = generateOfflineDynamicQRToken(seed, 'PER-1001');
 
-    const res = controller.verifyToken(token);
+    const res = controller.verifyToken(token, fakeReq());
     expect(res.valid).toBe(true);
     expect(res.personId).toBe('PER-1001');
+  });
+
+  it('verify-realtime includes the enrolled person photo even when denied for other reasons', () => {
+    const person = identityService.createPerson({
+      siteId: 'site-test',
+      personType: 'employee',
+      firstName: 'Foto',
+      lastName: 'Test',
+      nationalId: 'PHOTO-001',
+      photoUrl: 'https://cdn.umbral.local/photos/photo-001.jpg',
+    });
+
+    const seed = 'secret-key-12345678901234567890';
+    const { token } = generateOfflineDynamicQRToken(seed, person.id);
+
+    // No assignedReaderId -> denied before topology/decision are consulted, but the photo
+    // lookup must still have run so the guard can visually confirm identity either way.
+    const res = service.verifyRealtime(token, null, DEFAULT_ORG_ID);
+    expect(res.valid).toBe(false);
+    expect(res.reason).toContain('NO_ASSIGNED_CHECKPOINT');
+    expect(res.photoUrl).toBe('https://cdn.umbral.local/photos/photo-001.jpg');
+  });
+
+  it('rejects a token signed with a different organization\'s seedSecret (tenant isolation)', () => {
+    const org2 = topologyService.createOrganization({ code: 'ORG2', name: 'Otra Organización' });
+    expect(org2.seedSecret).not.toBe(DEFAULT_ORG_SEED_SECRET);
+
+    // Token signed with org-default's secret (what apps/user hardcodes today).
+    const { token } = generateOfflineDynamicQRToken(DEFAULT_ORG_SEED_SECRET, 'PER-CROSS-ORG');
+
+    // A guard whose operator belongs to org2 must NOT be able to verify it — different secret.
+    const res = service.verifyRealtime(token, null, org2.id);
+    expect(res.valid).toBe(false);
+    expect(res.reason).toContain('Firma HMAC no coincide');
+
+    // The same token verifies fine (signature-wise) for a guard in org-default — proves the
+    // rejection above is really about org-scoping, not a broken token.
+    const sameOrgRes = service.verifyRealtime(token, null, DEFAULT_ORG_ID);
+    expect(sameOrgRes.reason).not.toContain('Firma HMAC no coincide');
+    expect(sameOrgRes.reason).toContain('NO_ASSIGNED_CHECKPOINT');
   });
 });

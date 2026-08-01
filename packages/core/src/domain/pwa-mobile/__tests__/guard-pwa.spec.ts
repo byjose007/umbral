@@ -28,13 +28,13 @@ describe('Guard PWA Domain Unit Tests', () => {
     const result = verifyGuardQRTokenOffline(token, seedSecret, crlList);
     expect(result.valid).toBe(false);
     expect(result.personId).toBe(personId);
-    expect(result.reason).toBe('REVOKED_IN_CRL');
+    expect(result.reason).toBe('REVOKED_IN_CRL (Lista Negra)');
   });
 
   it('should reject invalid or tampered QR token offline', () => {
     const result = verifyGuardQRTokenOffline('INVALID-TOKEN-FORMAT', seedSecret, []);
     expect(result.valid).toBe(false);
-    expect(result.reason).toBe('EXPIRED_OR_INVALID');
+    expect(result.reason).toContain('Formato inválido');
   });
 
   it('should create GuardOverrideLog for manual contingency gate release', () => {

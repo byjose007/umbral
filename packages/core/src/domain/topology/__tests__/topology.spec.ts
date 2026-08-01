@@ -6,7 +6,9 @@ import {
   makeControllerId,
   makeReaderId,
   makeLockProfileId,
+  makeOrganizationId,
 } from '../ids.js';
+import { Organization } from '../organization.entity.js';
 import { Site } from '../site.entity.js';
 import { Zone } from '../zone.entity.js';
 import { Controller } from '../controller.entity.js';
@@ -22,6 +24,7 @@ describe('Topology Domain Foundation', () => {
     it('creates site with unique code and timezone', () => {
       const siteRes = Site.create({
         id: makeSiteId('site-1'),
+        organizationId: makeOrganizationId('org-1'),
         code: 'TCH',
         name: 'Torre Central',
         timezone: 'America/Guayaquil',
@@ -291,7 +294,13 @@ describe('Topology Domain Foundation', () => {
 
   describe('Export & Import Topology Configuration', () => {
     it('exports topology and re-imports while preserving invariants', () => {
-      const site = Site.create({ id: makeSiteId('s1'), code: 'TCH', name: 'Site 1', timezone: 'UTC' })._unsafeUnwrap();
+      const org = Organization.create({
+        id: makeOrganizationId('org-1'),
+        code: 'ORG1',
+        name: 'Org 1',
+        seedSecret: 'seed-secret-for-export-import-test',
+      })._unsafeUnwrap();
+      const site = Site.create({ id: makeSiteId('s1'), organizationId: org.id, code: 'TCH', name: 'Site 1', timezone: 'UTC' })._unsafeUnwrap();
       const zone = Zone.create({ id: makeZoneId('z1'), siteId: site.id, code: 'Z1', name: 'Zone 1' })._unsafeUnwrap();
       const lp = LockProfile.create({
         id: makeLockProfileId('lp1'),
@@ -309,6 +318,7 @@ describe('Topology Domain Foundation', () => {
       const reader = Reader.create({ id: makeReaderId('r1'), doorId: door.id, name: 'R1', protocol: ReaderProtocol.OSDP, direction: 'in' })._unsafeUnwrap();
 
       const exported = exportTopologyConfig({
+        organizations: [org],
         sites: [site],
         zones: [zone],
         lockProfiles: [lp],

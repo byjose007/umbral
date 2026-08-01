@@ -3,8 +3,10 @@ import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import {
+  Organization,
   Site,
   Zone,
   LockProfile,
@@ -14,18 +16,21 @@ import {
   SimulatorAdapter,
   exportTopologyConfig,
   importTopologyConfig,
+  makeOrganizationId,
   makeSiteId,
   makeZoneId,
   makeLockProfileId,
   makeControllerId,
   makeDoorId,
   makeReaderId,
+  randomHexBytes,
   LockActuationMode,
   FailState,
   ReaderProtocol,
   ValidatedTopologyConfig,
 } from '@umbral/core';
 import {
+  CreateOrganizationDto,
   CreateSiteDto,
   CreateZoneDto,
   CreateLockProfileDto,
@@ -36,6 +41,14 @@ import {
   ApproveLifeSafetyChangeDto,
 } from './dto/topology.dto';
 import { cryptoNativeOrRandomUUID } from './uuid';
+
+/**
+ * Every org-scoped resource defaults into this organization when the caller doesn't specify one.
+ * Its seedSecret matches the legacy hardcoded literal so existing demo flows (apps/user, which has
+ * no real login and can't supply an orgId) keep working unchanged.
+ */
+const DEFAULT_ORGANIZATION_ID = 'org-default';
+const DEFAULT_ORGANIZATION_SEED_SECRET = 'secret-key-12345678901234567890';
 
 export interface ConfigVersionRecord {
   id: string;
@@ -52,7 +65,8 @@ export interface ConfigVersionRecord {
 }
 
 @Injectable()
-export class TopologyService {
+export class TopologyService implements OnModuleInit {
+  private readonly organizationsMap = new Map<string, Organization>();
   private readonly sitesMap = new Map<string, Site>();
   private readonly zonesMap = new Map<string, Zone>();
   private readonly lockProfilesMap = new Map<string, LockProfile>();
@@ -63,11 +77,61 @@ export class TopologyService {
 
   public readonly simulatorAdapter = new SimulatorAdapter();
 
+  onModuleInit() {
+    if (this.organizationsMap.size > 0) return;
+
+    const orgRes = Organization.create({
+      id: makeOrganizationId(DEFAULT_ORGANIZATION_ID),
+      code: 'DEFAULT',
+      name: 'Organización por Defecto',
+      seedSecret: DEFAULT_ORGANIZATION_SEED_SECRET,
+    });
+    if (orgRes.isOk()) {
+      this.organizationsMap.set(orgRes.value.id, orgRes.value);
+    }
+  }
+
+  // Organizations
+  public createOrganization(dto: CreateOrganizationDto): Organization {
+    const id = makeOrganizationId(`org-${cryptoNativeOrRandomUUID()}`);
+    const orgRes = Organization.create({
+      id,
+      code: dto.code,
+      name: dto.name,
+      seedSecret: randomHexBytes(32),
+    });
+
+    if (orgRes.isErr()) {
+      throw new BadRequestException(orgRes.error.message);
+    }
+
+    this.organizationsMap.set(orgRes.value.id, orgRes.value);
+    return orgRes.value;
+  }
+
+  /** Public list — never exposes seedSecret. */
+  public getOrganizations() {
+    return Array.from(this.organizationsMap.values()).map((o) => o.publicProps);
+  }
+
+  /** Internal use only (e.g. guard-pwa resolving which secret to verify against) — includes seedSecret. */
+  public getOrganizationById(id: string): Organization {
+    const org = this.organizationsMap.get(id);
+    if (!org) throw new NotFoundException(`Organization not found: ${id}`);
+    return org;
+  }
+
   // Sites
   public createSite(dto: CreateSiteDto): Site {
+    const organizationId = dto.organizationId || DEFAULT_ORGANIZATION_ID;
+    if (!this.organizationsMap.has(organizationId)) {
+      throw new NotFoundException(`Organization not found: ${organizationId}`);
+    }
+
     const id = makeSiteId(`site-${cryptoNativeOrRandomUUID()}`);
     const siteRes = Site.create({
       id,
+      organizationId: makeOrganizationId(organizationId),
       code: dto.code,
       name: dto.name,
       timezone: dto.timezone || 'America/Guayaquil',
@@ -113,6 +177,8 @@ export class TopologyService {
       parentId: dto.parentId ? makeZoneId(dto.parentId) : null,
       code: dto.code,
       name: dto.name,
+      apbMode: dto.apbMode,
+      apbResetSec: dto.apbResetSec,
     });
 
     if (zoneRes.isErr()) {
@@ -125,6 +191,24 @@ export class TopologyService {
 
   public getZones(): Zone[] {
     return Array.from(this.zonesMap.values());
+  }
+
+  public getZoneById(id: string): Zone {
+    const zone = this.zonesMap.get(id);
+    if (!zone) throw new NotFoundException(`Zone not found: ${id}`);
+    return zone;
+  }
+
+  public getDoorById(id: string): Door {
+    const door = this.doorsMap.get(id);
+    if (!door) throw new NotFoundException(`Door not found: ${id}`);
+    return door;
+  }
+
+  public getReaderById(id: string): Reader {
+    const reader = this.readersMap.get(id);
+    if (!reader) throw new NotFoundException(`Reader not found: ${id}`);
+    return reader;
   }
 
   // Lock Profiles
@@ -398,6 +482,7 @@ export class TopologyService {
   // Export / Import
   public exportConfig() {
     const config: ValidatedTopologyConfig = {
+      organizations: Array.from(this.organizationsMap.values()),
       sites: Array.from(this.sitesMap.values()),
       zones: Array.from(this.zonesMap.values()),
       lockProfiles: Array.from(this.lockProfilesMap.values()),
@@ -416,8 +501,11 @@ export class TopologyService {
       );
     }
 
-    const { sites, zones, lockProfiles, controllers, doors, readers } =
+    const { organizations, sites, zones, lockProfiles, controllers, doors, readers } =
       res.value;
+
+    this.organizationsMap.clear();
+    organizations.forEach((o) => this.organizationsMap.set(o.id, o));
 
     this.sitesMap.clear();
     sites.forEach((s) => this.sitesMap.set(s.id, s));

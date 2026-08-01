@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { TopologyService } from './topology.service';
 import {
+  CreateOrganizationDto,
   CreateSiteDto,
   CreateZoneDto,
   CreateLockProfileDto,
@@ -20,6 +21,17 @@ import { Roles } from '../auth/roles.decorator';
 @Controller('topology')
 export class TopologyController {
   constructor(private readonly topologyService: TopologyService) {}
+
+  // Organizations
+  @Post('organizations')
+  createOrganization(@Body() dto: CreateOrganizationDto) {
+    return this.topologyService.createOrganization(dto).publicProps;
+  }
+
+  @Get('organizations')
+  getOrganizations() {
+    return this.topologyService.getOrganizations();
+  }
 
   // Sites
   @Post('sites')

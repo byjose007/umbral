@@ -10,8 +10,20 @@ import {
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
+export const organizations = pgTable('organizations', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  code: varchar('code', { length: 32 }).notNull().unique(),
+  name: varchar('name', { length: 128 }).notNull(),
+  // HMAC secret for this organization's dynamic QR credentials — never returned over the wire.
+  seedSecret: varchar('seed_secret', { length: 256 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export const sites = pgTable('sites', {
   id: varchar('id', { length: 36 }).primaryKey(),
+  organizationId: varchar('organization_id', { length: 36 })
+    .notNull()
+    .references(() => organizations.id, { onDelete: 'cascade' }),
   code: varchar('code', { length: 32 }).notNull().unique(),
   name: varchar('name', { length: 128 }).notNull(),
   timezone: varchar('timezone', { length: 64 })

@@ -1,116 +1,242 @@
-<ion-header [translucent]="true">
-  <ion-toolbar color="dark">
-    <ion-title>
-      <ion-icon name="shield-checkmark-outline" class="ion-margin-end"></ion-icon>
-      UMBRAL — Consola de Guardia PWA
-    </ion-title>
-    <ion-badge slot="end" color="success" class="offline-badge">
-      <ion-icon name="flash-outline"></ion-icon> Offline Ready (ES256 & CRL)
-    </ion-badge>
-    <ion-buttons slot="end">
-      <ion-button (click)="onLogout()">Cerrar sesión</ion-button>
-    </ion-buttons>
+<ion-header class="ion-no-border light-header">
+  <!-- Cabecera principal clara y despejada -->
+  <ion-toolbar class="guard-header-toolbar">
+    <div class="header-container">
+      <div class="brand-section">
+        <ion-icon name="shield-checkmark" class="brand-icon"></ion-icon>
+        <div class="brand-titles">
+          <h1 class="brand-title">UMBRAL GUARDIA</h1>
+          <span class="site-subtitle">Garita Principal • {{ currentTimeString }}</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="status-dot-offline" title="Base de datos y verificación local activa">
+          <span class="dot"></span>
+          <span class="status-label">OFFLINE OK</span>
+        </div>
+        <ion-button fill="clear" color="dark" class="theme-toggle-btn" (click)="toggleTheme()" [title]="isDarkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'">
+          <ion-icon [name]="isDarkMode ? 'sunny-outline' : 'moon-outline'" slot="icon-only"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" color="dark" class="logout-button" (click)="onLogout()" title="Cerrar sesión">
+          <ion-icon name="log-out-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
   </ion-toolbar>
-  <ion-toolbar color="light">
-    <ion-segment [(ngModel)]="activeTab">
+
+  <!-- Pestañas de navegación claras y de alto contraste -->
+  <ion-toolbar class="nav-toolbar">
+    <ion-segment [(ngModel)]="activeTab" mode="md" class="guard-segment-light">
       <ion-segment-button value="scanner">
-        <ion-icon name="camera-outline"></ion-icon>
-        <ion-label>Escáner QR</ion-label>
+        <ion-icon name="qr-code-outline"></ion-icon>
+        <ion-label>Escanear</ion-label>
       </ion-segment-button>
       <ion-segment-button value="contingency">
         <ion-icon name="key-outline"></ion-icon>
-        <ion-label>Contingencia</ion-label>
+        <ion-label>Manual</ion-label>
       </ion-segment-button>
       <ion-segment-button value="muster">
         <ion-icon name="warning-outline"></ion-icon>
-        <ion-label>Evacuación Muster</ion-label>
+        <ion-label>Muster</ion-label>
       </ion-segment-button>
       <ion-segment-button value="alerts">
         <ion-icon name="notifications-outline"></ion-icon>
-        <ion-label>Alertas (LOPDP)</ion-label>
+        <ion-label>Alertas</ion-label>
       </ion-segment-button>
     </ion-segment>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="ion-padding">
+<ion-content [fullscreen]="true" class="guard-content ion-padding">
 
-  <!-- TAB 1: ESCÁNER Y VERIFICACIÓN QR OFFLINE -->
-  <div *ngIf="activeTab === 'scanner'">
-    <ion-card>
-      <ion-card-header>
-        <ion-card-title>Verificación Offline de QR con Clave Pública ES256</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <p>Valide credenciales dinámicas de pases por cámara o escáner sin conexión al servidor central.</p>
-
-        <div class="demo-buttons">
-          <ion-button size="small" fill="outline" color="secondary" (click)="generateDemoToken()">
-            Generar QR Válido Demo
-          </ion-button>
-          <ion-button size="small" fill="outline" color="warning" (click)="generateRevokedDemoToken()">
-            Generar QR Revocado Demo
-          </ion-button>
+  <!-- TAB 1: PANTALLA PRINCIPAL DE ESCANEO DE PRODUCCIÓN -->
+  <div *ngIf="activeTab === 'scanner'" class="tab-wrapper">
+    
+    <!-- Encabezado de estado de producción -->
+    <div class="production-scanner-card">
+      <div class="scanner-status-header">
+        <div class="status-indicator">
+          <span class="live-pulse"></span>
+          <h2>Verificación en Tiempo Real</h2>
         </div>
+        <div class="scanner-hardware-tag">
+          <ion-icon name="barcode-outline"></ion-icon> Lector Físico
+        </div>
+      </div>
 
-        <ion-item class="ion-margin-top">
-          <ion-label position="stacked">Token de Código QR Escaneado</ion-label>
-          <ion-input [(ngModel)]="qrInput" placeholder="Escanee o pegue el token UMBRAL-PASS-v1..."></ion-input>
-        </ion-item>
+      <!-- Visor de Escaneo (Viewfinder) -->
+      <div class="viewfinder-box" [class.active-cam]="isCameraActive">
+        <video #videoElement class="camera-video-feed" [class.visible]="isCameraActive" autoplay playsinline muted></video>
 
-        <ion-button expand="block" color="primary" class="ion-margin-top" (click)="verifyScannedQR()">
-          <ion-icon name="search-outline" slot="start"></ion-icon> Verificar Credencial Offline
+        <div class="viewfinder-frame">
+          <div class="corner top-left"></div>
+          <div class="corner top-right"></div>
+          <div class="corner bottom-left"></div>
+          <div class="corner bottom-right"></div>
+          
+          <div class="laser-line" *ngIf="isCameraActive"></div>
+
+          <!-- Prompt cuando la cámara no está activa -->
+          <div class="viewfinder-idle-state" *ngIf="!isCameraActive">
+            <div class="qr-target-icon">
+              <ion-icon name="qr-code-outline"></ion-icon>
+            </div>
+            <h3>Listo para Escanear</h3>
+            <p>Escaneo automático por lector óptico o cámara del dispositivo</p>
+            <ion-button color="primary" size="small" class="cam-toggle-btn" (click)="toggleCamera()">
+              <ion-icon name="camera-outline" slot="start"></ion-icon> Activar Cámara PWA
+            </ion-button>
+          </div>
+
+          <!-- Estado con cámara activa -->
+          <div class="viewfinder-active-controls" *ngIf="isCameraActive">
+            <span class="cam-badge"><span class="red-dot"></span> Cámara en vivo</span>
+            <ion-button size="small" fill="solid" color="dark" (click)="toggleCamera()">
+              <ion-icon name="close-circle-outline" slot="start"></ion-icon> Detener Cámara
+            </ion-button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TARJETA DE RESULTADO DE ALTA VISIBILIDAD (VERDE / ROJO DE ALTO CONTRASTE) -->
+    <div *ngIf="scanResult" class="scan-result-card ion-margin-top" [ngClass]="scanResult.valid ? 'result-approved' : 'result-denied'">
+      <div class="result-card-header">
+        <div class="result-status-badge">
+          <ion-icon [name]="scanResult.valid ? 'checkmark-circle' : 'close-circle'"></ion-icon>
+          <span>{{ scanResult.valid ? 'PASO PERMITIDO' : 'ACCESO DENEGADO' }}</span>
+        </div>
+        <div class="auto-reset-timer" *ngIf="autoResetCountdown > 0">
+          Reinicio en {{ autoResetCountdown }}s
+        </div>
+      </div>
+
+      <div *ngIf="offlineFallbackActive" style="background: #b8860b; color: #fff; font-size: 0.75rem; font-weight: 600; text-align: center; padding: 6px 10px;">
+        ⚠ SIN CONEXIÓN — validación local offline (no en tiempo real)
+      </div>
+
+      <div class="result-card-body">
+        <h3 class="result-reason-text">{{ scanResult.reason }}</h3>
+        <p *ngIf="lastScannedToken" style="font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.7); word-break: break-all; margin: 4px 0 12px;">{{ lastScannedToken }}</p>
+
+        <div class="person-info-grid">
+          <div class="person-avatar-box">
+            @if (scanResult.photoUrl) {
+              <img [src]="scanResult.photoUrl" alt="Foto de la persona enrolada" class="person-photo" />
+            } @else {
+              <ion-icon name="person-circle-outline"></ion-icon>
+            }
+          </div>
+          <div class="person-details">
+            <span class="detail-label">Identificador de Persona</span>
+            <h4 class="detail-value">{{ scanResult.personId || 'Persona No Identificada' }}</h4>
+
+            <div class="detail-tags">
+              <span class="info-tag" *ngIf="scanResult.valid">Firma Criptográfica OK</span>
+              <span class="info-tag" *ngIf="scanResult.valid">Garita Principal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-card-actions">
+        <ion-button color="light" fill="solid" expand="block" (click)="clearScanResult()">
+          <ion-icon name="refresh-outline" slot="start"></ion-icon> Siguiente Escaneo
         </ion-button>
+        <ion-button *ngIf="scanResult.valid" color="success" expand="block" (click)="confirmGateOpen()">
+          <ion-icon name="lock-open-outline" slot="start"></ion-icon> Abrir Garita
+        </ion-button>
+      </div>
 
-        <div *ngIf="scanResult" class="scan-result-box ion-margin-top" [ngClass]="scanResult.valid ? 'valid-pass' : 'invalid-pass'">
-          <h3 *ngIf="scanResult.valid">
-            <ion-icon name="checkmark-circle-outline"></ion-icon> ACCESO AUTORIZADO
-          </h3>
-          <h3 *ngIf="!scanResult.valid">
-            <ion-icon name="close-circle-outline"></ion-icon> ACCESO DENEGADO
-          </h3>
-
-          <p><strong>Persona ID:</strong> {{ scanResult.personId || 'Desconocido' }}</p>
-          <p><strong>Motivo / Estado:</strong> {{ scanResult.reason }}</p>
+      <!-- PANEL DE DIAGNÓSTICO DETALLADO DE GARITA (PANTALLA DE TELÉFONO) -->
+      <div *ngIf="scanResult && scanResult.diagnostics" class="debug-diag-card">
+        <div class="diag-header">
+          <ion-icon name="warning-outline"></ion-icon>
+          <span>Diagnóstico Detallado en Pantalla</span>
         </div>
-      </ion-card-content>
-    </ion-card>
+        <div class="diag-body">
+          <div class="diag-row"><span class="diag-label">Razón:</span> <span class="diag-val highlight">{{ scanResult.diagnostics.reason }}</span></div>
+          <div class="diag-row"><span class="diag-label">Prefijo:</span> <span class="diag-val">{{ scanResult.diagnostics.prefix || '(Vacío)' }}</span></div>
+          <div class="diag-row"><span class="diag-label">ID Persona:</span> <span class="diag-val">{{ scanResult.diagnostics.personId || '(Ninguno)' }}</span></div>
+          <div class="diag-row"><span class="diag-label">Firma Recibida:</span> <span class="diag-val mono">{{ scanResult.diagnostics.sigToken || '---' }}</span></div>
+          <div class="diag-row"><span class="diag-label">Firma Esperada:</span> <span class="diag-val mono">{{ scanResult.diagnostics.sigExpected || '---' }}</span></div>
+          <div class="diag-row"><span class="diag-label">Ventana Token:</span> <span class="diag-val">{{ scanResult.diagnostics.winToken }}</span></div>
+          <div class="diag-row"><span class="diag-label">Ventana Garita:</span> <span class="diag-val">{{ scanResult.diagnostics.winCurrent }}</span></div>
+          <div class="diag-row"><span class="diag-label">Diferencia Reloj:</span> <span class="diag-val">{{ scanResult.diagnostics.drift }} ventanas</span></div>
+          <div class="diag-row"><span class="diag-label">Token Completo:</span> <span class="diag-val mono break-all">{{ scanResult.diagnostics.rawToken }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESPLEGABLE DE RESPALDO: INGRESO MANUAL DE TOKEN (SOLO EN CASO DE QR DAÑADO) -->
+    <div class="fallback-drawer ion-margin-top">
+      <div class="fallback-drawer-header" (click)="toggleManualInput()">
+        <div class="drawer-title">
+          <ion-icon name="keypad-outline"></ion-icon>
+          <span>Ingreso Manual de Respaldo (Si el código QR está dañado)</span>
+        </div>
+        <ion-icon [name]="showManualInput ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+      </div>
+
+      <div class="fallback-drawer-body" *ngIf="showManualInput">
+        <p class="drawer-desc">Ingrese el token devuelto si la pantalla del teléfono tiene el cristal roto o no refleja luz suficiente.</p>
+        <ion-item class="token-input-item">
+          <ion-label position="stacked">Token de Credencial UMBRAL-PASS</ion-label>
+          <ion-input [(ngModel)]="qrInput" placeholder="Pegue o escriba UMBRAL-PASS-v1..." (keyup.enter)="verifyScannedQR()"></ion-input>
+        </ion-item>
+        <ion-button expand="block" color="primary" class="ion-margin-top" (click)="verifyScannedQR()">
+          <ion-icon name="search-outline" slot="start"></ion-icon> Validar Token Manualmente
+        </ion-button>
+      </div>
+    </div>
+
   </div>
 
   <!-- TAB 2: CONTINGENCIA EN GARITA -->
-  <div *ngIf="activeTab === 'contingency'">
-    <ion-card>
+  <div *ngIf="activeTab === 'contingency'" class="tab-wrapper">
+    <ion-card class="content-card">
       <ion-card-header>
-        <ion-card-title>Contingencia & Búsqueda Manual en Garita</ion-card-title>
+        <ion-card-title class="card-title-lg">
+          <ion-icon name="key-outline" class="title-icon"></ion-icon>
+          Contingencia y Búsqueda Manual en Garita
+        </ion-card-title>
       </ion-card-header>
       <ion-card-content>
-        <p>En caso de fallo de hardware o corte de red, busque la persona por cédula o nombre y autorice la apertura con registro de auditoría.</p>
+        <p class="card-subtitle">
+          En caso de pérdida de dispositivo del usuario o falla de hardware, busque la persona por cédula o nombre y autorice la apertura con registro de auditoría.
+        </p>
 
-        <ion-searchbar [(ngModel)]="searchQuery" placeholder="Buscar por cédula, nombre o ID..."></ion-searchbar>
+        <ion-searchbar [(ngModel)]="searchQuery" placeholder="Buscar por cédula, nombre o ID..." class="custom-searchbar"></ion-searchbar>
 
-        <ion-item>
-          <ion-label position="stacked">Motivo de Liberación de Garita</ion-label>
-          <ion-input [(ngModel)]="overrideReason"></ion-input>
+        <ion-item class="input-item-styled ion-margin-top">
+          <ion-label position="stacked">Motivo de Liberación Manual (Auditable)</ion-label>
+          <ion-input [(ngModel)]="overrideReason" placeholder="Ej. Fallo de cámara / Ficha física validada"></ion-input>
         </ion-item>
 
-        <ion-list class="ion-margin-top">
-          <ion-item *ngFor="let occupant of filteredOccupants">
-            <ion-label>
-              <h2>{{ occupant.fullName }} ({{ occupant.pseudonym }})</h2>
-              <p>Cédula: {{ occupant.documentNumber }} | Zona: {{ occupant.zoneId }}</p>
-            </ion-label>
-            <ion-button slot="end" color="warning" size="small" (click)="releaseGateManually(occupant)">
-              <ion-icon name="lock-open-outline" slot="start"></ion-icon> Liberar Garita
+        <div class="occupants-stack ion-margin-top">
+          <div *ngFor="let occupant of filteredOccupants" class="occupant-card-stacked">
+            <div class="occupant-main-info">
+              <h3 class="occupant-name">{{ occupant.fullName }}</h3>
+              <p class="occupant-meta">Cédula: <strong>{{ occupant.documentNumber }}</strong> • Zona: {{ occupant.zoneId }}</p>
+              <span class="pseudonym-tag">ID: {{ occupant.pseudonym }}</span>
+            </div>
+            <ion-button color="warning" size="small" class="release-btn" (click)="releaseGateManually(occupant)">
+              <ion-icon name="lock-open-outline" slot="start"></ion-icon> Liberar
             </ion-button>
-          </ion-item>
-        </ion-list>
+          </div>
+        </div>
 
-        <!-- Audit log records -->
-        <div class="audit-history ion-margin-top" *ngIf="overrideLogs.length > 0">
-          <h4><ion-icon name="clipboard-outline"></ion-icon> Logs de Auditoría Guardados Offline ({{ overrideLogs.length }})</h4>
-          <ul>
+        <!-- Registros de auditoría guardados offline -->
+        <div class="audit-history-box ion-margin-top" *ngIf="overrideLogs.length > 0">
+          <h4>
+            <ion-icon name="clipboard-outline"></ion-icon> 
+            Logs de Auditoría Guardados Offline ({{ overrideLogs.length }})
+          </h4>
+          <ul class="audit-logs-list">
             <li *ngFor="let log of overrideLogs.slice(-3)">
-              <strong>[{{ log.action }}]</strong> {{ log.doorId }} - Reason: {{ log.reason }} ({{ log.createdAt | date:'short' }})
+              <strong>[{{ log.action }}]</strong> {{ log.doorId }} — Motivo: {{ log.reason }} 
+              <span class="audit-time">({{ log.createdAt | date:'short' }})</span>
             </li>
           </ul>
         </div>
@@ -119,30 +245,35 @@
   </div>
 
   <!-- TAB 3: MUSTER ROLL DE EVACUACIÓN (EMERGENCIAS) -->
-  <div *ngIf="activeTab === 'muster'" class="muster-container">
-    <ion-card>
+  <div *ngIf="activeTab === 'muster'" class="tab-wrapper">
+    <ion-card class="content-card">
       <ion-card-header>
-        <ion-card-title><ion-icon name="warning-outline"></ion-icon> Conteo de Evacuación Muster (Offline Roll)</ion-card-title>
+        <ion-card-title class="card-title-lg title-danger">
+          <ion-icon name="warning-outline" class="title-icon"></ion-icon>
+          Conteo de Evacuación Muster (Offline Emergency Roll)
+        </ion-card-title>
       </ion-card-header>
       <ion-card-content>
-        <p>En incendios o terremotos, genere e imprima el reporte instantáneo de quién está dentro del edificio sin red.</p>
+        <p class="card-subtitle">
+          En emergencias o terremotos, controle e imprima el reporte instantáneo de las personas que permanecen dentro de las instalaciones.
+        </p>
 
-        <div class="headcount-summary" *ngIf="musterRoll">
-          <div class="headcount-box total">
+        <div class="headcount-grid" *ngIf="musterRoll">
+          <div class="headcount-card total">
             <span class="num">{{ musterRoll.getHeadcount().totalInside }}</span>
             <span class="label">Total en Sitio</span>
           </div>
-          <div class="headcount-box evacuated">
+          <div class="headcount-card evacuated">
             <span class="num">{{ musterRoll.getHeadcount().evacuatedCount }}</span>
             <span class="label">Evacuados</span>
           </div>
-          <div class="headcount-box missing">
+          <div class="headcount-card missing">
             <span class="num">{{ musterRoll.getHeadcount().missingCount }}</span>
             <span class="label">Pendientes</span>
           </div>
         </div>
 
-        <div class="export-actions ion-margin-top">
+        <div class="export-buttons-group ion-margin-top">
           <ion-button color="success" size="small" (click)="exportMusterCsv()">
             <ion-icon name="document-text-outline" slot="start"></ion-icon> Exportar CSV
           </ion-button>
@@ -151,55 +282,88 @@
           </ion-button>
         </div>
 
-        <pre *ngIf="musterExportText" class="export-preview ion-margin-top">{{ musterExportText }}</pre>
+        <pre *ngIf="musterExportText" class="export-preview-box ion-margin-top">{{ musterExportText }}</pre>
 
-        <ion-list class="ion-margin-top" *ngIf="musterRoll">
-          <ion-item *ngFor="let occ of musterRoll.occupants">
-            <ion-label>
-              <h2>{{ occ.fullName || occ.pseudonym }}</h2>
-              <p>Zona: {{ occ.zoneId }} | Estado: <strong>{{ occ.status }}</strong></p>
-            </ion-label>
+        <div class="muster-stack ion-margin-top" *ngIf="musterRoll">
+          <div *ngFor="let occ of musterRoll.occupants" class="muster-card-stacked">
+            <div class="muster-main-info">
+              <h3 class="muster-name">{{ occ.fullName || occ.pseudonym }}</h3>
+              <p class="muster-meta">Zona: <strong>{{ occ.zoneId }}</strong> • Estado: <span class="status-tag" [class.evacuated]="occ.status === 'evacuated_accounted'">{{ occ.status }}</span></p>
+            </div>
             <ion-button
-              slot="end"
               size="small"
               [color]="occ.status === 'evacuated_accounted' ? 'success' : 'danger'"
               (click)="toggleEvacuated(occ.personId)">
               {{ occ.status === 'evacuated_accounted' ? 'Evacuado ✓' : 'Marcar Evacuado' }}
             </ion-button>
-          </ion-item>
-        </ion-list>
+          </div>
+        </div>
       </ion-card-content>
     </ion-card>
   </div>
 
   <!-- TAB 4: ALERTAS ACTIVAS LOPDP DP-06 -->
-  <div *ngIf="activeTab === 'alerts'">
-    <ion-card>
+  <div *ngIf="activeTab === 'alerts'" class="tab-wrapper">
+    <ion-card class="content-card">
       <ion-card-header>
-        <ion-card-title><ion-icon name="notifications-outline"></ion-icon> Feed de Alertas (Seudonimizado LOPDP DP-06)</ion-card-title>
+        <ion-card-title class="card-title-lg">
+          <ion-icon name="notifications-outline" class="title-icon"></ion-icon>
+          Feed de Alertas de Seguridad
+        </ion-card-title>
       </ion-card-header>
       <ion-card-content>
-        <p>Las identidades de personas involucradas en alarmas se presentan seudonimizadas por defecto para protección de datos personales.</p>
+        <p class="card-subtitle">
+          Cumplimiento LOPDP DP-06: Las identidades de personas involucradas en alarmas se presentan seudonimizadas por defecto.
+        </p>
 
-        <ion-list>
-          <ion-item *ngFor="let alertObj of alerts">
-            <ion-label>
-              <h2>
-                <ion-badge color="danger">{{ alertObj.severity | uppercase }}</ion-badge>
-                {{ alertObj.type }} — {{ alertObj.zoneId }}
-              </h2>
-              <p><strong>Persona:</strong> {{ alertObj.getDisplayName() }}</p>
+        <div class="alerts-stack ion-margin-top">
+          <div *ngFor="let alertObj of alerts" class="alert-card-stacked" [class.unmasked]="unmaskedAlertIds.has(alertObj.alertId)">
+            
+            <div class="alert-card-top-bar">
+              <div class="title-and-badge">
+                <span class="severity-tag" [ngClass]="alertObj.severity.toLowerCase()">
+                  {{ alertObj.severity === 'high' ? 'ALTA' : (alertObj.severity === 'medium' ? 'MEDIA' : 'INFO') }}
+                </span>
+                <h3 class="alert-formatted-title">{{ formatAlertType(alertObj.type) }}</h3>
+              </div>
+              <span class="alert-time-text">{{ alertObj.timestamp | date:'shortTime' }}</span>
+            </div>
 
-              <p><strong>Documento:</strong> {{ alertObj.getDisplayDocument() }}</p>
+            <div class="alert-zone-pill">
+              <ion-icon name="location-outline"></ion-icon>
+              <span>Zona: <strong>{{ alertObj.zoneId }}</strong></span>
+            </div>
 
-              <p><small>{{ alertObj.timestamp | date:'medium' }}</small></p>
-            </ion-label>
+            <div class="alert-card-details">
+              <div class="detail-row">
+                <span class="lbl">Persona:</span>
+                <span class="val person-val">{{ alertObj.getDisplayName() }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="lbl">Documento:</span>
+                <span class="val doc-val">{{ alertObj.getDisplayDocument() }}</span>
+              </div>
+            </div>
 
-            <ion-button slot="end" color="warning" fill="outline" size="small" (click)="unmaskAlertIdentity(alertObj)">
-              <ion-icon name="eye-outline" slot="start"></ion-icon> Revelar Identidad (Auditado)
-            </ion-button>
-          </ion-item>
-        </ion-list>
+            <div class="alert-card-action-bar">
+              <ion-button
+                *ngIf="!unmaskedAlertIds.has(alertObj.alertId)"
+                color="warning"
+                fill="outline"
+                size="small"
+                expand="block"
+                class="unmask-action-btn"
+                (click)="unmaskAlertIdentity(alertObj)">
+                <ion-icon name="eye-outline" slot="start"></ion-icon> Revelar Identidad (Auditado)
+              </ion-button>
+
+              <div *ngIf="unmaskedAlertIds.has(alertObj.alertId)" class="unmasked-status-notice">
+                <ion-icon name="checkmark-circle-outline"></ion-icon> Identidad Revelada y Registrada en Auditoría
+              </div>
+            </div>
+
+          </div>
+        </div>
       </ion-card-content>
     </ion-card>
   </div>

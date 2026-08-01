@@ -3,7 +3,23 @@ import {
   SaveMusterSnapshotDto,
   RecordGuardOverrideLogDto,
 } from './dto/guard-pwa.dto';
-import { PseudonymizedAlert, verifyGuardQRTokenOffline } from '@umbral/core';
+import {
+  PseudonymizedAlert,
+  verifyGuardQRTokenOffline,
+  getOfflineDynamicQRTokenDiagnostics,
+} from '@umbral/core';
+import { TopologyService } from '../topology/topology.service';
+import { AccessMatrixCompilerService } from '../access-matrix/access-matrix-compiler.service';
+import { DecisionService } from '../decision/decision.service';
+import { IdentityService } from '../identity/identity.service';
+
+export interface GuardRealtimeVerificationResult {
+  readonly valid: boolean;
+  readonly personId?: string;
+  readonly reason?: string;
+  readonly apbViolation?: boolean;
+  readonly photoUrl?: string;
+}
 
 export interface GuardSyncData {
   readonly siteId: string;
@@ -22,7 +38,13 @@ export interface GuardSyncData {
 @Injectable()
 export class GuardPwaService {
   private readonly mockCrlList = ['PER-REVOKED-99'];
-  private readonly mockSeedSecret = 'secret-key-12345678901234567890';
+
+  constructor(
+    private readonly topologyService: TopologyService,
+    private readonly accessMatrixCompilerService: AccessMatrixCompilerService,
+    private readonly decisionService: DecisionService,
+    private readonly identityService: IdentityService,
+  ) {}
 
   private readonly mockOccupants = [
     {
@@ -46,13 +68,18 @@ export class GuardPwaService {
   private readonly musterSnapshots: any[] = [];
   private readonly overrideLogs: any[] = [];
 
-  getSyncData(siteId: string): GuardSyncData {
+  getSyncData(siteId: string, organizationId: string): GuardSyncData {
     return {
       siteId,
-      seedSecret: this.mockSeedSecret,
+      seedSecret: this.resolveSeedSecret(organizationId),
       crlList: this.mockCrlList,
       occupants: this.mockOccupants,
     };
+  }
+
+  /** Resolves the calling operator's organization seedSecret — never a global/shared one. */
+  private resolveSeedSecret(organizationId: string): string {
+    return this.topologyService.getOrganizationById(organizationId).seedSecret;
   }
 
   saveMusterSnapshot(dto: SaveMusterSnapshotDto) {
@@ -110,12 +137,85 @@ export class GuardPwaService {
     ];
   }
 
-  verifyQR(token: string) {
+  verifyQR(token: string, organizationId: string) {
     return verifyGuardQRTokenOffline(
       token,
-      this.mockSeedSecret,
+      this.resolveSeedSecret(organizationId),
       this.mockCrlList,
     );
+  }
+
+  /**
+   * Real-time verification: the guard-pwa acts as just another Reader against the same
+   * evaluateAccess/evaluateAPB engine a hardware reader would use — same doorId/zoneId, same
+   * shared anti-passback state (owned by DecisionService). Falls back to verifyQR/offline
+   * decoding client-side only when this call itself is unreachable (handled by the Angular app).
+   */
+  verifyRealtime(
+    token: string,
+    assignedReaderId: string | null | undefined,
+    organizationId: string,
+    now: Date = new Date(),
+  ): GuardRealtimeVerificationResult {
+    const seedSecret = this.resolveSeedSecret(organizationId);
+    const diag = getOfflineDynamicQRTokenDiagnostics(token, seedSecret, now);
+    if (!diag.isValidSig) {
+      return { valid: false, personId: diag.personId, reason: diag.reason };
+    }
+
+    // Best-effort: shown so the guard can visually match the person against who's standing
+    // there, regardless of whether the access decision below ends up granting or denying.
+    const photoUrl = this.lookupPhotoUrl(diag.personId);
+
+    if (!assignedReaderId) {
+      return {
+        valid: false,
+        personId: diag.personId,
+        reason: 'NO_ASSIGNED_CHECKPOINT (operador sin garita asignada)',
+        photoUrl,
+      };
+    }
+
+    const reader = this.topologyService.getReaderById(assignedReaderId);
+    const door = this.topologyService.getDoorById(reader.doorId);
+    const zone = this.topologyService.getZoneById(door.zoneInsideId);
+
+    const compiled = this.accessMatrixCompilerService.compileForPerson(diag.personId, now);
+    if (!compiled.ok) {
+      return { valid: false, personId: diag.personId, reason: compiled.reasonCode, photoUrl };
+    }
+
+    const evaluation = this.decisionService.evaluate({
+      credentialHash: compiled.credentialHash,
+      doorId: door.id,
+      readerId: reader.id,
+      at: now.toISOString(),
+      localState: {
+        matrix: compiled.matrix,
+        offlineMode: 'cached',
+        isOffline: false,
+        apbMode: zone.apbMode,
+        apbResetSec: zone.apbResetSec ?? undefined,
+      },
+      readerZoneInsideId: door.zoneInsideId,
+    } as Parameters<DecisionService['evaluate']>[0]);
+
+    const { decision } = evaluation;
+    return {
+      valid: decision.kind === 'granted',
+      personId: diag.personId,
+      reason: decision.reasonCode,
+      apbViolation: decision.kind === 'granted' ? decision.apbViolation ?? false : false,
+      photoUrl,
+    };
+  }
+
+  private lookupPhotoUrl(personId: string): string | undefined {
+    try {
+      return this.identityService.getPersonById(personId).photoUrl ?? undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   getSavedMusterSnapshots() {

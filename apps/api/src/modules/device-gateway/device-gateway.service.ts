@@ -194,6 +194,7 @@ export class DeviceGatewayService {
         appliedMatrixVersion: 0,
         isMatrixUpToDate: false,
         requiresMatrixPush: true,
+        firmwareVersion: 'unknown',
       };
     }
 
@@ -213,6 +214,25 @@ export class DeviceGatewayService {
         health.appliedMatrixVersion >= currentServerMatrixVersion,
       requiresMatrixPush:
         health.appliedMatrixVersion < currentServerMatrixVersion,
+      firmwareVersion: health.firmwareVersion,
     };
+  }
+
+  // Per-controller compiled matrix cache — set explicitly (e.g. via the /matrix endpoint) and
+  // republished automatically when a heartbeat reports a stale appliedMatrixVersion.
+  private readonly controllerMatrixMap = new Map<
+    string,
+    { version: number; matrix: Record<string, unknown> }
+  >();
+
+  public setControllerMatrix(controllerId: string, matrix: Record<string, unknown>) {
+    const existing = this.controllerMatrixMap.get(controllerId);
+    const version = (existing?.version ?? 0) + 1;
+    this.controllerMatrixMap.set(controllerId, { version, matrix });
+    return { controllerId, version };
+  }
+
+  public getControllerMatrix(controllerId: string) {
+    return this.controllerMatrixMap.get(controllerId) ?? null;
   }
 }

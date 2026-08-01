@@ -1,11 +1,37 @@
 import { ok, err, Result } from 'neverthrow';
 import { DomainError, PwaMobileError } from './errors.js';
-import { verifyOfflineDynamicQRToken } from './offline-qr-generator.js';
+import {
+  verifyOfflineDynamicQRToken,
+  getOfflineDynamicQRTokenDiagnostics,
+  OfflineQrDiagnostics,
+} from './offline-qr-generator.js';
 
 export interface GuardOfflineVerificationResult {
   readonly valid: boolean;
   readonly personId?: string;
-  readonly reason?: 'REVOKED_IN_CRL' | 'EXPIRED_OR_INVALID' | 'OK';
+  readonly reason?: string;
+  readonly diagnostics?: OfflineQrDiagnostics;
+  /** Enrolled person's photo, shown on screen so the guard can visually match it against who's standing there. */
+  readonly photoUrl?: string;
+}
+
+export function verifyGuardQRTokenOffline(
+  qrToken: string,
+  seedSecret: string,
+  crlList: readonly string[],
+  nowMs: number = Date.now()
+): GuardOfflineVerificationResult {
+  const diag = getOfflineDynamicQRTokenDiagnostics(qrToken, seedSecret, nowMs);
+
+  if (!diag.isValidSig) {
+    return { valid: false, personId: diag.personId, reason: diag.reason, diagnostics: diag };
+  }
+
+  if (diag.personId && crlList.includes(diag.personId)) {
+    return { valid: false, personId: diag.personId, reason: 'REVOKED_IN_CRL (Lista Negra)', diagnostics: diag };
+  }
+
+  return { valid: true, personId: diag.personId, reason: 'OK', diagnostics: diag };
 }
 
 export interface GuardOverrideLogProps {
@@ -104,25 +130,4 @@ export class PseudonymizedAlert {
 
     return { alert: unmasked, auditLog };
   }
-}
-
-export function verifyGuardQRTokenOffline(
-  qrToken: string,
-  seedSecret: string,
-  crlList: readonly string[],
-  nowMs: number = Date.now()
-): GuardOfflineVerificationResult {
-  const isValidSig = verifyOfflineDynamicQRToken(qrToken, seedSecret, nowMs);
-  if (!isValidSig) {
-    return { valid: false, reason: 'EXPIRED_OR_INVALID' };
-  }
-
-  const parts = qrToken.split('.');
-  const personId = parts[1];
-
-  if (personId && crlList.includes(personId)) {
-    return { valid: false, personId, reason: 'REVOKED_IN_CRL' };
-  }
-
-  return { valid: true, personId, reason: 'OK' };
 }

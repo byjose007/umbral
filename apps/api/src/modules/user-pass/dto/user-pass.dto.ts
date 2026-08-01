@@ -55,3 +55,30 @@ export const RecordVisitorPassUseSchema = z.object({
   visitorPassId: z.string().min(1),
 });
 export class RecordVisitorPassUseDto extends createZodDto(RecordVisitorPassUseSchema) {}
+
+export const GenerateActivationCodeSchema = z.object({
+  personId: z.string().min(1),
+});
+export class GenerateActivationCodeDto extends createZodDto(GenerateActivationCodeSchema) {}
+
+export const EnrollUserPassSchema = z.object({
+  personId: z.string().min(1),
+  activationCode: z.string().length(6),
+  pinHash: z.string().min(1),
+});
+export class EnrollUserPassDto extends createZodDto(EnrollUserPassSchema) {}
+
+export const RevokeUserPassSchema = z.object({
+  personId: z.string().min(1),
+});
+export class RevokeUserPassDto extends createZodDto(RevokeUserPassSchema) {}
+
+export const RecordAccessEventSchema = z.object({
+  personId: z.string().min(1),
+  doorLabel: z.string().optional(),
+  eventType: z.enum(['ENTRY', 'EXIT', 'DENIED', 'DURESS']),
+  granted: z.boolean(),
+  isDuress: z.boolean().optional(),
+});
+export class RecordAccessEventDto extends createZodDto(RecordAccessEventSchema) {}
+

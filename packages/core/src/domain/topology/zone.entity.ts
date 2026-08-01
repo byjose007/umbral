@@ -2,12 +2,17 @@ import { ok, err, Result } from 'neverthrow';
 import { SiteId, ZoneId } from './ids.js';
 import { DomainError } from './errors.js';
 
+/** Mirrors decision/types.ts AntiPassbackMode — duplicated locally to avoid a topology→decision import cycle. */
+export type ZoneAntiPassbackMode = 'off' | 'soft' | 'hard' | 'timed';
+
 export interface ZoneProps {
   readonly id: ZoneId;
   readonly siteId: SiteId;
   readonly parentId?: ZoneId | null;
   readonly code: string;
   readonly name: string;
+  readonly apbMode?: ZoneAntiPassbackMode;
+  readonly apbResetSec?: number | null;
 }
 
 export class Zone {
@@ -28,6 +33,8 @@ export class Zone {
         parentId: props.parentId ?? null,
         code: props.code.trim().toUpperCase(),
         name: props.name.trim(),
+        apbMode: props.apbMode ?? 'off',
+        apbResetSec: props.apbResetSec ?? null,
       })
     );
   }
@@ -37,4 +44,6 @@ export class Zone {
   get parentId(): ZoneId | null { return this.props.parentId; }
   get code(): string { return this.props.code; }
   get name(): string { return this.props.name; }
+  get apbMode(): ZoneAntiPassbackMode { return this.props.apbMode; }
+  get apbResetSec(): number | null { return this.props.apbResetSec; }
 }

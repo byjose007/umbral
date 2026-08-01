@@ -33,6 +33,7 @@
     "bullmq": "^5.80.10",
     "drizzle-orm": "^0.45.2",
     "ioredis": "^5.11.1",
+    "mqtt": "^5.15.2",
     "nestjs-zod": "^5.4.0",
     "neverthrow": "^8.2.0",
     "passport": "^0.7.0",

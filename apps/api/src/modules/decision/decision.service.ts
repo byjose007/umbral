@@ -7,6 +7,7 @@ import {
   Decision,
   CompiledAccessMatrix,
   LocalAccessState,
+  APBStateEntry,
 } from '@umbral/core';
 import { EvaluateDecisionDto, CompileMatrixDto } from './dto/decision.dto';
 
@@ -17,8 +18,16 @@ export interface DecisionEvaluationResult {
   serverMirror: boolean;
 }
 
+/**
+ * Anti-passback state (lastPassState) is owned here, not by the caller. If every reader channel
+ * (guard-pwa, future hardware controllers via device-gateway) kept its own copy, anti-passback
+ * would silently diverge between channels — the whole point of a shared engine is a shared state.
+ * The `lastPassState` a caller sends in is ignored for APB purposes; this service's own map wins.
+ */
 @Injectable()
 export class DecisionService {
+  private readonly lastPassState = new Map<string, APBStateEntry>();
+
   public evaluate(dto: EvaluateDecisionDto): DecisionEvaluationResult {
     const startTime = performance.now();
 
@@ -29,7 +38,7 @@ export class DecisionService {
       isOffline: dto.localState.isOffline,
       apbMode: dto.localState.apbMode,
       apbResetSec: dto.localState.apbResetSec,
-      lastPassState: dto.localState.lastPassState,
+      lastPassState: Object.fromEntries(this.lastPassState),
       interlockBlockedDoors: dto.localState.interlockBlockedDoors,
     };
 
@@ -42,6 +51,14 @@ export class DecisionService {
       presentedPin: dto.presentedPin || undefined,
       readerZoneInsideId: dto.readerZoneInsideId || undefined,
     });
+
+    if (decision.kind === 'granted' && dto.readerZoneInsideId) {
+      this.lastPassState.set(dto.credentialHash, {
+        lastZoneId: dto.readerZoneInsideId,
+        lastReaderId: dto.readerId,
+        lastTimestamp: atDate.toISOString(),
+      });
+    }
 
     const endTime = performance.now();
     const executionMs = Number((endTime - startTime).toFixed(3));

@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { DeviceGatewayService } from './device-gateway.service';
+import { MqttDoorControllerAdapter } from './mqtt-door-controller.adapter';
 import {
   ProvisionDeviceDto,
   RevokeCertificateDto,
@@ -7,11 +8,15 @@ import {
   HeartbeatDto,
 } from './dto/device-gateway.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { makeControllerId } from '@umbral/core';
 
 @UseGuards(JwtAuthGuard)
 @Controller('device-gateway')
 export class DeviceGatewayController {
-  constructor(private readonly deviceGatewayService: DeviceGatewayService) {}
+  constructor(
+    private readonly deviceGatewayService: DeviceGatewayService,
+    private readonly doorControllerAdapter: MqttDoorControllerAdapter,
+  ) {}
 
   @Post('provision')
   provisionDevice(@Body() dto: ProvisionDeviceDto) {
@@ -49,5 +54,15 @@ export class DeviceGatewayController {
   ) {
     const version = serverMatrixVersion ? parseInt(serverMatrixVersion, 10) : 1;
     return this.deviceGatewayService.getDeviceHealth(id, version);
+  }
+
+  /** POST /device-gateway/controllers/:id/matrix — set and immediately push the compiled matrix to a controller over MQTT. */
+  @Post('controllers/:id/matrix')
+  async pushMatrix(@Param('id') id: string, @Body() matrix: Record<string, unknown>) {
+    const result = await this.doorControllerAdapter.pushAccessMatrix(makeControllerId(id), matrix);
+    if (result.isErr()) {
+      throw result.error;
+    }
+    return this.deviceGatewayService.getControllerMatrix(id);
   }
 }

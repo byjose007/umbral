@@ -1,9 +1,10 @@
 import { ok, err, Result } from 'neverthrow';
-import { SiteId } from './ids.js';
+import { SiteId, OrganizationId } from './ids.js';
 import { DomainError } from './errors.js';
 
 export interface SiteProps {
   readonly id: SiteId;
+  readonly organizationId: OrganizationId;
   readonly code: string;
   readonly name: string;
   readonly timezone: string;
@@ -13,6 +14,9 @@ export class Site {
   private constructor(public readonly props: SiteProps) {}
 
   public static create(props: SiteProps): Result<Site, DomainError> {
+    if (!props.organizationId) {
+      return err(new DomainError('INVALID_SITE_ORG', 'Organization ID is required'));
+    }
     if (!props.code || props.code.trim().length === 0) {
       return err(new DomainError('INVALID_SITE_CODE', 'Site code cannot be empty'));
     }
@@ -25,6 +29,7 @@ export class Site {
 
     return ok(new Site({
       id: props.id,
+      organizationId: props.organizationId,
       code: props.code.trim().toUpperCase(),
       name: props.name.trim(),
       timezone: props.timezone.trim(),
@@ -32,6 +37,7 @@ export class Site {
   }
 
   get id(): SiteId { return this.props.id; }
+  get organizationId(): OrganizationId { return this.props.organizationId; }
   get code(): string { return this.props.code; }
   get name(): string { return this.props.name; }
   get timezone(): string { return this.props.timezone; }

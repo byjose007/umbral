@@ -5,9 +5,10 @@ TBD - created by archiving change add-topology-foundation. Update Purpose after 
 ## Requirements
 ### Requirement: Modelo de instalación física
 
-El sistema SHALL permitir modelar la instalación como una jerarquía de sitios,
-zonas, puertas, controladores y lectores, de modo que cada puerta pertenezca a un
-sitio y esté gobernada por exactamente un controlador y un perfil de cerradura.
+El sistema SHALL permitir modelar la instalación como una jerarquía de
+organizaciones, sitios, zonas, puertas, controladores y lectores, de modo que cada
+sitio pertenezca a exactamente una organización y cada puerta pertenezca a un sitio
+y esté gobernada por exactamente un controlador y un perfil de cerradura.
 
 #### Scenario: Alta de un sitio con su zona raíz
 
@@ -15,6 +16,14 @@ sitio y esté gobernada por exactamente un controlador y un perfil de cerradura.
 - **CUANDO** crea un sitio con código único y zona horaria
 - **ENTONCES** el sistema persiste el sitio y permite colgar zonas de él
 - **Y** el código del sitio es único dentro de la instalación
+
+#### Scenario: Todo sitio pertenece a una organización
+
+- **DADO** una organización existente
+- **CUANDO** se crea un sitio asociado a esa organización
+- **ENTONCES** el sistema rechaza el alta si la organización indicada no existe
+- **Y** un sitio sin organización explícita queda asociado a la organización por
+  defecto
 
 #### Scenario: Jerarquía de zonas
 

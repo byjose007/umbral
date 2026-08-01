@@ -27,6 +27,7 @@ export const operators = pgTable(
     siteId: varchar('site_id', { length: 36 })
       .notNull()
       .references(() => sites.id, { onDelete: 'cascade' }),
+    organizationId: varchar('organization_id', { length: 36 }),
     fullName: varchar('full_name', { length: 128 }).notNull(),
     email: varchar('email', { length: 256 }).notNull(),
     passwordHash: varchar('password_hash', { length: 256 }).notNull(),
@@ -34,6 +35,7 @@ export const operators = pgTable(
     status: operatorStatusEnum('status').notNull().default('active'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     lastLoginAt: timestamp('last_login_at'),
+    assignedReaderId: varchar('assigned_reader_id', { length: 36 }),
   },
   (table) => ({
     emailIdx: uniqueIndex('idx_operators_email').on(table.email),

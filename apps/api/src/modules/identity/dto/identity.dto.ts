@@ -14,6 +14,7 @@ export interface CreatePersonDto {
   externalRef?: string;
   email?: string;
   phone?: string;
+  photoUrl?: string;
 }
 
 export interface CreateEmploymentPeriodDto {

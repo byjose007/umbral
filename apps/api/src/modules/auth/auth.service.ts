@@ -12,9 +12,13 @@ import {
   OperatorId,
   makeOperatorId,
   makeSiteId,
+  makeOrganizationId,
   sha256Hex,
   randomHexBytes,
 } from '@umbral/core';
+
+/** Mirrors TopologyService's DEFAULT_ORGANIZATION_ID — every operator defaults into it when no orgId is given. */
+const DEFAULT_ORGANIZATION_ID = 'org-default';
 import {
   LoginDto,
   RefreshDto,
@@ -53,6 +57,7 @@ export class AuthService implements OnModuleInit {
       password: 'UmbralAdmin123!',
       role: 'admin',
       siteId: 'site-default',
+      organizationId: DEFAULT_ORGANIZATION_ID,
     });
   }
 
@@ -62,15 +67,19 @@ export class AuthService implements OnModuleInit {
     password: string;
     role: Operator['role'];
     siteId: string;
+    organizationId?: string;
+    assignedReaderId?: string | null;
   }): Promise<Operator> {
     const passwordHash = await argon2.hash(input.password);
     const result = Operator.create({
       id: makeOperatorId(uuidv4()),
       siteId: makeSiteId(input.siteId),
+      organizationId: makeOrganizationId(input.organizationId || DEFAULT_ORGANIZATION_ID),
       fullName: input.fullName,
       email: input.email,
       passwordHash,
       role: input.role,
+      assignedReaderId: input.assignedReaderId ?? null,
     });
 
     if (result.isErr()) {
@@ -157,6 +166,13 @@ export class AuthService implements OnModuleInit {
       ...operator.props,
       role: dto.role ?? operator.role,
       status: dto.status ?? operator.status,
+      organizationId: dto.organizationId
+        ? makeOrganizationId(dto.organizationId)
+        : operator.organizationId,
+      assignedReaderId:
+        dto.assignedReaderId !== undefined
+          ? dto.assignedReaderId
+          : operator.assignedReaderId,
     });
     if (result.isErr()) {
       throw new BadRequestException(result.error.message);
@@ -165,6 +181,41 @@ export class AuthService implements OnModuleInit {
     this.operatorsById.set(operator.id, result.value);
     return result.value.publicProps;
   }
+
+  async resetOperatorPassword(id: string) {
+    const operator = this.operatorsById.get(makeOperatorId(id));
+    if (!operator) {
+      throw new NotFoundException(`Operador ${id} no encontrado`);
+    }
+
+    const temporaryPassword = `Tmp-${Math.floor(100000 + Math.random() * 900000)}`;
+    const passwordHash = await argon2.hash(temporaryPassword);
+
+    const result = Operator.create({
+      ...operator.props,
+      passwordHash,
+    });
+    if (result.isErr()) {
+      throw new BadRequestException(result.error.message);
+    }
+
+    this.operatorsById.set(operator.id, result.value);
+
+    // Revoke active refresh tokens for this operator
+    for (const record of this.refreshTokensByHash.values()) {
+      if (record.operatorId === operator.id) {
+        record.revokedAt = new Date();
+      }
+    }
+
+    return {
+      id: operator.id,
+      fullName: operator.fullName,
+      email: operator.email,
+      temporaryPassword,
+    };
+  }
+
 
   /** Used by JwtStrategy to re-check the operator is still active on every request. */
   validateOperatorById(operatorId: string) {

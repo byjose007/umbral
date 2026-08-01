@@ -5,6 +5,7 @@ import { DomainError } from './errors.js';
 export const ReaderProtocol = {
   OSDP: 'osdp',
   WIEGAND: 'wiegand',
+  QR_CAMERA: 'qr-camera',
 } as const;
 
 export type ReaderProtocol = (typeof ReaderProtocol)[keyof typeof ReaderProtocol];

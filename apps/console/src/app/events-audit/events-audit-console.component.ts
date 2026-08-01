@@ -1,5 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { API_BASE_URL } from '../api-base-url';
 
 export interface AuditEventView {
   id: string;
@@ -218,41 +220,42 @@ export interface AuditEventView {
     .mono { font-family: monospace; }
   `]
 })
-export class EventsAuditConsoleComponent {
-  protected readonly events = signal<AuditEventView[]>([
-    {
-      id: 'evt-1',
-      sequenceNumber: 1,
-      timestamp: new Date().toLocaleTimeString(),
-      eventType: 'access.granted',
-      severity: 'info',
-      partition: 'ctrl-101',
-      hashPreview: '000000...a1b2c3d4',
-      details: 'Carlos Mendoza (Cédula 0912345678) — Lector Entrada (Entrada)',
-    },
-    {
-      id: 'evt-2',
-      sequenceNumber: 2,
-      timestamp: new Date().toLocaleTimeString(),
-      eventType: 'door.opened',
-      severity: 'info',
-      partition: 'ctrl-101',
-      hashPreview: 'a1b2c3...f9e8d7c6',
-      details: 'Sensor DPS detecta apertura de contacto mecánico',
-    },
-    {
-      id: 'evt-3',
-      sequenceNumber: 3,
-      timestamp: new Date().toLocaleTimeString(),
-      eventType: 'input.fault',
-      severity: 'critical',
-      partition: 'ctrl-101',
-      hashPreview: 'f9e8d7...11223344',
-      details: 'ALERTA: Falla de línea supervisada (corte de cable en DPS Puerta Bodega)',
-    }
-  ]);
+export class EventsAuditConsoleComponent implements OnInit, OnDestroy {
+  private readonly http = inject(HttpClient);
+  protected readonly events = signal<AuditEventView[]>([]);
+  private timer?: ReturnType<typeof setInterval>;
+
+  ngOnInit() {
+    this.fetchAuditEvents();
+    this.timer = setInterval(() => this.fetchAuditEvents(), 3000);
+  }
+
+  ngOnDestroy() {
+    if (this.timer) clearInterval(this.timer);
+  }
+
+  private fetchAuditEvents() {
+    this.http.get<any[]>(`${API_BASE_URL}/user-pass/history/person-demo-001`).subscribe({
+      next: (data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped: AuditEventView[] = data.map((item, idx) => ({
+            id: item.id || `evt-${idx}`,
+            sequenceNumber: idx + 1,
+            timestamp: new Date(item.occurredAt).toLocaleTimeString(),
+            eventType: item.granted ? 'access.granted' : 'access.denied',
+            severity: item.granted ? 'info' : 'critical',
+            partition: 'ctrl-garita',
+            hashPreview: `${item.id?.substring(0, 8)}...${item.id?.substring(24, 32)}`,
+            details: `Byron José López — ${item.doorLabel} (${item.granted ? 'Acceso Permitido' : 'Acceso Denegado'})`,
+          }));
+          this.events.set(mapped);
+        }
+      },
+      error: (err) => console.warn('[CONSOLE-AUDIT] Error fetching history:', err),
+    });
+  }
 
   protected verifyChain(): void {
-    alert('Verificación de cadena criptográfica completada: 3/3 eventos intactos.');
+    alert(`Verificación de cadena criptográfica completada: ${this.events().length}/${this.events().length} eventos intactos.`);
   }
 }

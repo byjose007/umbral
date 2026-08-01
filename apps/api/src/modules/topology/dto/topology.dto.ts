@@ -1,10 +1,17 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
+export const CreateOrganizationSchema = z.object({
+  code: z.string().min(1).max(32),
+  name: z.string().min(1).max(128),
+});
+export class CreateOrganizationDto extends createZodDto(CreateOrganizationSchema) {}
+
 export const CreateSiteSchema = z.object({
   code: z.string().min(1).max(32),
   name: z.string().min(1).max(128),
   timezone: z.string().min(1).default('America/Guayaquil'),
+  organizationId: z.string().min(1).optional(),
 });
 export class CreateSiteDto extends createZodDto(CreateSiteSchema) {}
 
@@ -13,6 +20,8 @@ export const CreateZoneSchema = z.object({
   parentId: z.string().uuid().or(z.string().min(1)).optional().nullable(),
   code: z.string().min(1).max(32),
   name: z.string().min(1).max(128),
+  apbMode: z.enum(['off', 'soft', 'hard', 'timed']).default('off'),
+  apbResetSec: z.number().int().positive().optional().nullable(),
 });
 export class CreateZoneDto extends createZodDto(CreateZoneSchema) {}
 
@@ -60,7 +69,7 @@ export class CreateDoorDto extends createZodDto(CreateDoorSchema) {}
 export const CreateReaderSchema = z.object({
   doorId: z.string().min(1),
   name: z.string().min(1).max(128),
-  protocol: z.enum(['osdp', 'wiegand']),
+  protocol: z.enum(['osdp', 'wiegand', 'qr-camera']),
   direction: z.enum(['in', 'out']).default('in'),
   riskAcceptedBy: z.string().optional().nullable(),
 });

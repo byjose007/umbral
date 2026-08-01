@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, of, switchMap } from 'rxjs';
 import { API_BASE_URL } from '../api-base-url';
+import { ToastService } from '../shared/ui/toast.service';
 
 interface PersonDto {
   id: string;
@@ -45,7 +46,12 @@ const PAGE_SIZE = 10;
   template: `
     <div class="p-6">
       <header class="mb-6 flex items-center justify-between border-b border-border pb-4">
-        <h1 class="text-xl font-semibold text-text">Gestión de Identidades y Ciclo Laboral</h1>
+        <div>
+          <h1 class="text-xl font-semibold text-text">👥 Directorio de Usuarios y Pases Móviles</h1>
+          <p class="mt-1 text-sm text-text-muted">
+            Empleados, contratistas y visitantes que utilizan la app <strong>User Pass</strong> en su móvil.
+          </p>
+        </div>
         <span class="rounded-full bg-success-bg px-3 py-1 text-sm font-semibold text-success">
           ● Motor de Estado Derivado Activo
         </span>
@@ -54,7 +60,7 @@ const PAGE_SIZE = 10;
       <main class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section class="rounded-lg border border-border bg-surface p-5">
           <div class="mb-3 flex items-center justify-between">
-            <h2 class="text-base font-semibold text-text">Personas e Identidades</h2>
+            <h2 class="text-base font-semibold text-text">Usuarios de Pase QR</h2>
             @if (total() > 0) {
               <span class="text-sm text-text-muted">{{ total() }} en total</span>
             }
@@ -84,7 +90,7 @@ const PAGE_SIZE = 10;
                     </span>
                   </div>
 
-                  <div>
+                  <div class="flex items-center gap-3">
                     @if (person.accessStatus === 'allowed') {
                       <span class="rounded bg-success-bg px-2 py-1 text-xs font-bold text-success">
                         PERMITIDO
@@ -94,13 +100,51 @@ const PAGE_SIZE = 10;
                         class="rounded bg-danger-bg px-2 py-1 text-xs font-bold text-danger"
                         [title]="person.blockReason"
                       >
-                        BLOQUEADO: {{ person.blockReason }}
+                        BLOQUEADO
                       </span>
                     }
+
+                    <button
+                      type="button"
+                      class="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-accent hover:bg-surface-hover"
+                      (click)="onGenerateActivation(person)"
+                    >
+                      Código Activación
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-danger hover:bg-surface-hover"
+                      (click)="onRevokePass(person)"
+                    >
+                      Revocar Pase
+                    </button>
                   </div>
                 </div>
               }
             </div>
+
+            @if (activationModalData()) {
+              <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                <div class="w-full max-w-md rounded-lg border border-border bg-surface p-6">
+                  <h3 class="text-lg font-semibold text-text mb-2">📱 Código de Activación de Pase</h3>
+                  <p class="text-sm text-text-muted mb-4">
+                    Entrega este código de 6 dígitos a <strong>{{ activationModalData()?.fullName }}</strong>. Deberá introducirlo en su PWA de Usuario para crear su PIN personal de 4 dígitos.
+                  </p>
+                  <div class="mb-4 rounded-md border border-accent bg-surface-2 p-3 text-center font-mono text-2xl font-bold tracking-widest text-accent">
+                    {{ activationModalData()?.code }}
+                  </div>
+                  <p class="text-xs text-text-muted mb-4">Válido por 24 horas. Código de un solo uso.</p>
+                  <button
+                    type="button"
+                    class="w-full rounded-md bg-accent py-2 font-medium text-accent-text hover:bg-accent-hover"
+                    (click)="activationModalData.set(null)"
+                  >
+                    Entendido / Cerrar
+                  </button>
+                </div>
+              </div>
+            }
+
 
             @if (totalPages() > 1) {
               <div class="mt-4 flex items-center justify-between">
@@ -126,8 +170,85 @@ const PAGE_SIZE = 10;
           }
         </section>
 
-        <section class="rounded-lg border border-border bg-surface p-5">
-          <h2 class="mb-3 text-base font-semibold text-text">Invariante: Estado de Acceso Derivado</h2>
+        <section class="flex flex-col gap-6">
+          <div class="rounded-lg border border-border bg-surface p-5">
+            <h2 class="mb-3 text-base font-semibold text-text">Registrar Nueva Persona</h2>
+            <form (submit)="onCreatePerson($event)">
+              <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label class="block text-sm text-text-muted mb-1">Nombre</label>
+                  <input
+                    class="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text focus:outline-none focus:border-accent"
+                    [value]="form.firstName"
+                    (input)="form.firstName = $any($event.target).value"
+                    placeholder="Byron José"
+                    required
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm text-text-muted mb-1">Apellidos</label>
+                  <input
+                    class="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text focus:outline-none focus:border-accent"
+                    [value]="form.lastName"
+                    (input)="form.lastName = $any($event.target).value"
+                    placeholder="López"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label class="block text-sm text-text-muted mb-1">Cédula / ID Nacional</label>
+                  <input
+                    class="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text focus:outline-none focus:border-accent"
+                    [value]="form.nationalId"
+                    (input)="form.nationalId = $any($event.target).value"
+                    placeholder="12345678-9"
+                    required
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm text-text-muted mb-1">Tipo de Usuario (Perfil de Acceso)</label>
+                  <select
+                    class="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+                    [value]="form.personType"
+                    (change)="form.personType = $any($event.target).value"
+                  >
+                    <option value="employee">Empleado / Personal Fijo</option>
+                    <option value="contractor">Contratista / Proveedor / Cliente</option>
+                    <option value="visitor">Invitado / Visita Ocasional</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="block text-sm text-text-muted mb-1">Correo Electrónico</label>
+                <input
+                  type="email"
+                  class="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text focus:outline-none focus:border-accent"
+                  [value]="form.email"
+                  (input)="form.email = $any($event.target).value"
+                  placeholder="usuario@empresa.com"
+                />
+              </div>
+
+              @if (formError()) {
+                <p class="mb-3 text-sm text-danger">{{ formError() }}</p>
+              }
+
+              <button
+                type="submit"
+                class="w-full rounded-md bg-accent py-2 font-medium text-accent-text hover:bg-accent-hover disabled:opacity-50"
+                [disabled]="isSubmitting()"
+              >
+                {{ isSubmitting() ? 'Registrando…' : 'Registrar Persona' }}
+              </button>
+            </form>
+          </div>
+
+          <div class="rounded-lg border border-border bg-surface p-5">
+            <h2 class="mb-3 text-base font-semibold text-text">Invariante: Estado de Acceso Derivado</h2>
           <div class="rounded-md border border-border bg-bg p-4 text-sm leading-relaxed text-text-muted">
             <p>
               En UMBRAL, el acceso de una persona es una <strong class="text-text">función pura</strong>
@@ -155,6 +276,7 @@ const PAGE_SIZE = 10;
               </li>
             </ul>
           </div>
+          </div>
         </section>
       </main>
     </div>
@@ -162,6 +284,7 @@ const PAGE_SIZE = 10;
 })
 export class IdentityConsoleComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly toastService = inject(ToastService);
 
   protected readonly persons = signal<PersonView[]>([]);
   protected readonly total = signal(0);
@@ -169,10 +292,102 @@ export class IdentityConsoleComponent implements OnInit {
   protected readonly isLoading = signal(true);
   protected readonly loadError = signal<string | null>(null);
 
+  protected readonly activationModalData = signal<{ fullName: string; code: string } | null>(null);
+  protected readonly isSubmitting = signal(false);
+  protected readonly formError = signal<string | null>(null);
+
   protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / PAGE_SIZE)));
+
+  protected form = {
+    firstName: '',
+    lastName: '',
+    nationalId: '',
+    personType: 'employee' as 'employee' | 'contractor' | 'visitor',
+    email: '',
+    siteId: 'site-default',
+  };
 
   ngOnInit(): void {
     this.loadPage(1);
+  }
+
+  onCreatePerson(event: Event): void {
+    event.preventDefault();
+    this.formError.set(null);
+    this.isSubmitting.set(true);
+
+    this.http
+      .post<PersonDto>(`${API_BASE_URL}/identity/persons`, this.form)
+      .pipe(
+        switchMap((created) =>
+          this.http.post(`${API_BASE_URL}/identity/employment-periods`, {
+            personId: created.id,
+            contractType: 'full_time',
+            validFrom: new Date().toISOString(),
+            jobTitle: 'Personal Registrado',
+            department: 'Operaciones',
+          }).pipe(map(() => created))
+        ),
+      )
+      .subscribe({
+        next: (created) => {
+          this.isSubmitting.set(false);
+          this.form = {
+            firstName: '',
+            lastName: '',
+            nationalId: '',
+            personType: 'employee',
+            email: '',
+            siteId: 'site-default',
+          };
+          this.toastService.success(`Persona "${created.firstName} ${created.lastName}" registrada con acceso activo.`);
+          this.loadPage(1);
+        },
+        error: (err) => {
+          this.isSubmitting.set(false);
+          this.formError.set(err?.error?.message ?? 'No se pudo registrar a la persona.');
+        },
+      });
+  }
+
+  onGenerateActivation(person: PersonView): void {
+    this.http
+      .post<{ personId: string; activationCode: string }>(
+        `${API_BASE_URL}/user-pass/generate-activation`,
+        { personId: person.id },
+      )
+      .subscribe({
+        next: (res) => {
+          this.activationModalData.set({
+            fullName: person.fullName,
+            code: res.activationCode,
+          });
+          this.toastService.success(`Código de activación generado para ${person.fullName}.`);
+        },
+        error: () => {
+          this.toastService.error('No se pudo generar el código de activación.');
+        },
+      });
+  }
+
+  onRevokePass(person: PersonView): void {
+    this.http
+      .post<{ personId: string; newActivationCode: string }>(
+        `${API_BASE_URL}/user-pass/revoke`,
+        { personId: person.id },
+      )
+      .subscribe({
+        next: (res) => {
+          this.activationModalData.set({
+            fullName: person.fullName,
+            code: res.newActivationCode,
+          });
+          this.toastService.success(`Pase revocado para ${person.fullName}. Nuevo código generado.`);
+        },
+        error: () => {
+          this.toastService.error('No se pudo revocar el pase.');
+        },
+      });
   }
 
   protected loadPage(page: number): void {

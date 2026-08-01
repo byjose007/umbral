@@ -15,6 +15,7 @@ export const UMBRAL_CORE_VERSION: VersionInfo = {
 // Domain — Topology
 export * from './domain/topology/ids.js';
 export * from './domain/topology/errors.js';
+export * from './domain/topology/organization.entity.js';
 export * from './domain/topology/lock-profile.vo.js';
 export * from './domain/topology/site.entity.js';
 export * from './domain/topology/zone.entity.js';
@@ -31,6 +32,7 @@ export * from './domain/decision/evaluate.js';
 export * from './domain/decision/matrix-compiler.js';
 export * from './domain/decision/schedule-evaluator.js';
 export * from './domain/decision/apb-evaluator.js';
+export * from './domain/decision/schedule-adapter.js';
 
 // Domain — Identity
 export * from './domain/identity/ids.js';

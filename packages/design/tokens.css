@@ -77,4 +77,8 @@
   --umbral-success-bg: #e3f9f0;
   --umbral-warning-bg: #fdf1de;
   --umbral-danger-bg: #fbe9e9;
+
+  /* Softer elevation for a light surface — the dark-optimized shadows above read as too heavy here. */
+  --umbral-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --umbral-shadow-md: 0 4px 16px rgba(15, 23, 42, 0.1);
 }

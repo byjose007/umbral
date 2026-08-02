@@ -3,6 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { map, of, switchMap } from 'rxjs';
 import { API_BASE_URL } from '../api-base-url';
 import { ToastService } from '../shared/ui/toast.service';
+import { PageHeaderComponent } from '../shared/ui/page-header.component';
+import { StatusBadgeComponent } from '../shared/ui/status-badge.component';
+import { ModalComponent } from '../shared/ui/modal.component';
+import { PaginationComponent } from '../shared/ui/pagination.component';
 
 interface PersonDto {
   id: string;
@@ -43,22 +47,18 @@ const PAGE_SIZE = 10;
 @Component({
   selector: 'app-identity-console',
   standalone: true,
+  imports: [PageHeaderComponent, StatusBadgeComponent, ModalComponent, PaginationComponent],
   template: `
     <div class="p-6">
-      <header class="mb-6 flex items-center justify-between border-b border-border pb-4">
-        <div>
-          <h1 class="text-xl font-semibold text-text">👥 Directorio de Usuarios y Pases Móviles</h1>
-          <p class="mt-1 text-sm text-text-muted">
-            Empleados, contratistas y visitantes que utilizan la app <strong>User Pass</strong> en su móvil.
-          </p>
-        </div>
-        <span class="rounded-full bg-success-bg px-3 py-1 text-sm font-semibold text-success">
-          ● Motor de Estado Derivado Activo
-        </span>
-      </header>
+      <app-page-header
+        title="Directorio de Usuarios y Pases Móviles"
+        subtitle="Empleados, contratistas y visitantes que utilizan la app User Pass en su móvil."
+      >
+        <app-status-badge status tone="success">● Motor de Estado Derivado Activo</app-status-badge>
+      </app-page-header>
 
-      <main class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section class="rounded-lg border border-border bg-surface p-5">
+      <main class="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
+        <section class="min-w-0 rounded-lg border border-border bg-surface p-5">
           <div class="mb-3 flex items-center justify-between">
             <h2 class="text-base font-semibold text-text">Usuarios de Pase QR</h2>
             @if (total() > 0) {
@@ -73,100 +73,86 @@ const PAGE_SIZE = 10;
           } @else if (persons().length === 0) {
             <p class="text-sm text-text-muted">No hay personas registradas en este sitio todavía.</p>
           } @else {
-            <div class="space-y-3">
-              @for (person of persons(); track person.id) {
-                <div
-                  class="flex items-center justify-between rounded-md border px-4 py-3"
-                  [class]="person.accessStatus === 'blocked' ? 'border-danger bg-bg' : 'border-border bg-bg'"
-                >
-                  <div class="flex flex-col gap-1">
-                    <span class="font-medium text-text">{{ person.fullName }}</span>
-                    <span class="text-sm text-text-muted">
-                      Cédula/ID: {{ person.nationalId }} · Tipo:
-                      <strong class="capitalize">{{ person.personType }}</strong>
-                      @if (person.externalRef) {
-                        · HRIS: <code class="font-mono">{{ person.externalRef }}</code>
-                      }
-                    </span>
-                  </div>
-
-                  <div class="flex items-center gap-3">
-                    @if (person.accessStatus === 'allowed') {
-                      <span class="rounded bg-success-bg px-2 py-1 text-xs font-bold text-success">
-                        PERMITIDO
-                      </span>
-                    } @else {
-                      <span
-                        class="rounded bg-danger-bg px-2 py-1 text-xs font-bold text-danger"
-                        [title]="person.blockReason"
-                      >
-                        BLOQUEADO
-                      </span>
-                    }
-
-                    <button
-                      type="button"
-                      class="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-accent hover:bg-surface-hover"
-                      (click)="onGenerateActivation(person)"
-                    >
-                      Código Activación
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-danger hover:bg-surface-hover"
-                      (click)="onRevokePass(person)"
-                    >
-                      Revocar Pase
-                    </button>
-                  </div>
-                </div>
-              }
+            <div class="u-table-wrap">
+              <table class="u-table">
+                <thead>
+                  <tr>
+                    <th>Persona</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (person of persons(); track person.id) {
+                    <tr>
+                      <td>
+                        <div class="font-medium text-text">{{ person.fullName }}</div>
+                        <div class="text-xs text-text-muted">
+                          Cédula/ID: {{ person.nationalId }}
+                          @if (person.externalRef) {
+                            · HRIS: <code class="font-mono">{{ person.externalRef }}</code>
+                          }
+                        </div>
+                      </td>
+                      <td class="capitalize">{{ person.personType }}</td>
+                      <td>
+                        @if (person.accessStatus === 'allowed') {
+                          <app-status-badge tone="success">PERMITIDO</app-status-badge>
+                        } @else {
+                          <app-status-badge tone="danger" [attr.title]="person.blockReason">BLOQUEADO</app-status-badge>
+                        }
+                      </td>
+                      <td>
+                        <div class="flex flex-wrap items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            class="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-accent hover:bg-surface-hover"
+                            (click)="onGenerateActivation(person)"
+                          >
+                            Código activación
+                          </button>
+                          <button
+                            type="button"
+                            class="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-danger hover:bg-surface-hover"
+                            (click)="onRevokePass(person)"
+                          >
+                            Revocar pase
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
             </div>
 
-            @if (activationModalData()) {
-              <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-                <div class="w-full max-w-md rounded-lg border border-border bg-surface p-6">
-                  <h3 class="text-lg font-semibold text-text mb-2">📱 Código de Activación de Pase</h3>
-                  <p class="text-sm text-text-muted mb-4">
-                    Entrega este código de 6 dígitos a <strong>{{ activationModalData()?.fullName }}</strong>. Deberá introducirlo en su PWA de Usuario para crear su PIN personal de 4 dígitos.
-                  </p>
-                  <div class="mb-4 rounded-md border border-accent bg-surface-2 p-3 text-center font-mono text-2xl font-bold tracking-widest text-accent">
-                    {{ activationModalData()?.code }}
-                  </div>
-                  <p class="text-xs text-text-muted mb-4">Válido por 24 horas. Código de un solo uso.</p>
-                  <button
-                    type="button"
-                    class="w-full rounded-md bg-accent py-2 font-medium text-accent-text hover:bg-accent-hover"
-                    (click)="activationModalData.set(null)"
-                  >
-                    Entendido / Cerrar
-                  </button>
-                </div>
+            <app-modal
+              [open]="!!activationModalData()"
+              title="Código de activación de pase"
+              (closed)="activationModalData.set(null)"
+            >
+              <p class="text-sm text-text-muted mb-4">
+                Entrega este código de 6 dígitos a <strong>{{ activationModalData()?.fullName }}</strong>. Deberá introducirlo en su PWA de Usuario para crear su PIN personal de 4 dígitos.
+              </p>
+              <div class="mb-4 rounded-md border border-accent bg-surface-2 p-3 text-center font-mono text-2xl font-bold tracking-widest text-accent">
+                {{ activationModalData()?.code }}
               </div>
-            }
+              <p class="text-xs text-text-muted mb-4">Válido por 24 horas. Código de un solo uso.</p>
+              <button
+                type="button"
+                class="w-full rounded-md bg-accent py-2 font-medium text-accent-text hover:bg-accent-hover"
+                (click)="activationModalData.set(null)"
+              >
+                Entendido / cerrar
+              </button>
+            </app-modal>
 
-
-            @if (totalPages() > 1) {
-              <div class="mt-4 flex items-center justify-between">
-                <button
-                  type="button"
-                  class="rounded-md border border-border px-3 py-1.5 text-sm text-text-muted hover:bg-surface-hover hover:text-text disabled:opacity-40"
-                  [disabled]="page() <= 1"
-                  (click)="loadPage(page() - 1)"
-                >
-                  ← Anterior
-                </button>
-                <span class="text-sm text-text-muted">Página {{ page() }} de {{ totalPages() }}</span>
-                <button
-                  type="button"
-                  class="rounded-md border border-border px-3 py-1.5 text-sm text-text-muted hover:bg-surface-hover hover:text-text disabled:opacity-40"
-                  [disabled]="page() >= totalPages()"
-                  (click)="loadPage(page() + 1)"
-                >
-                  Siguiente →
-                </button>
-              </div>
-            }
+            <app-pagination
+              [page]="page()"
+              [totalPages]="totalPages()"
+              (pageChange)="loadPage($event)"
+            />
           }
         </section>
 

@@ -31,3 +31,12 @@ export interface PurgeEventsDto {
   olderThanDays: number;
   eventType?: EventType;
 }
+
+export interface QueryFeedDto {
+  siteId?: string;
+  limit?: number;
+}
+
+export interface RevealEventPiiDto {
+  operatorUser: string;
+}

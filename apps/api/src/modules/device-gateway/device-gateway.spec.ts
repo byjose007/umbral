@@ -3,11 +3,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DeviceGatewayModule } from './device-gateway.module';
 import { DeviceGatewayController } from './device-gateway.controller';
 import { DeviceGatewayService } from './device-gateway.service';
+import { TopologyService } from '../topology/topology.service';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 
 describe('DeviceGatewayModule', () => {
   let controller: DeviceGatewayController;
   let service: DeviceGatewayService;
+  let topologyService: TopologyService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -18,6 +20,7 @@ describe('DeviceGatewayModule', () => {
 
     controller = module.get<DeviceGatewayController>(DeviceGatewayController);
     service = module.get<DeviceGatewayService>(DeviceGatewayService);
+    topologyService = module.get<TopologyService>(TopologyService);
   });
 
   it('should be defined', () => {
@@ -108,5 +111,52 @@ describe('DeviceGatewayModule', () => {
     const health = controller.getDeviceHealth(controllerId, '1');
     expect(health.isOnline).toBe(false);
     expect(health.status).toBe('device.offline');
+  });
+
+  it('lists combined controller status, defaulting unprovisioned controllers instead of throwing', () => {
+    // Seed the default organization without triggering the wider module's MQTT lifecycle hook.
+    topologyService.onModuleInit();
+
+    const site = topologyService.createSite({
+      code: 'SITE-DG',
+      name: 'Device Gateway Test Site',
+      timezone: 'UTC',
+    });
+
+    const neverProvisioned = topologyService.createController({
+      siteId: site.id,
+      name: 'Never Provisioned Controller',
+      ipAddress: '10.0.0.5',
+    });
+
+    const provisioned = topologyService.createController({
+      siteId: site.id,
+      name: 'Healthy Controller',
+      ipAddress: '10.0.0.6',
+    });
+    controller.provisionDevice({
+      controllerId: provisioned.id,
+      certificateThumbprint: 'THUMB-DG-1',
+    });
+    controller.recordHeartbeat(
+      {
+        controllerId: provisioned.id,
+        appliedMatrixVersion: 1,
+        firmwareVersion: '1.0.0',
+        deviceTimestamp: Date.now(),
+      },
+      '1',
+    );
+
+    const list = controller.listControllers(site.id);
+    const byId = new Map(list.map((c: any) => [c.id, c]));
+
+    const untouched = byId.get(neverProvisioned.id);
+    expect(untouched.certificateStatus).toBe('unprovisioned');
+    expect(untouched.isOnline).toBe(false);
+
+    const healthy = byId.get(provisioned.id);
+    expect(healthy.certificateStatus).toBe('active');
+    expect(healthy.isOnline).toBe(true);
   });
 });

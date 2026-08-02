@@ -1,198 +1,202 @@
-import { Component, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
+import { API_BASE_URL } from '../api-base-url';
+import { PageHeaderComponent } from '../shared/ui/page-header.component';
+import { StatusBadgeComponent } from '../shared/ui/status-badge.component';
+
+interface AccessLevelDto {
+  id: string;
+  name: string;
+  description?: string;
+  entries: { doorId: string; scheduleId: string }[];
+}
+
+interface GroupDto {
+  id: string;
+  name: string;
+  description?: string;
+  accessLevelIds: string[];
+}
+
+interface ScheduleDto {
+  id: string;
+  name: string;
+}
+
+interface DoorDto {
+  hierarchicalName: string;
+  door: { props: { id: string } };
+}
 
 export interface AccessLevelView {
   id: string;
   name: string;
-  doorName: string;
-  scheduleName: string;
-  timeWindow: string;
+  description?: string;
+  entries: { doorName: string; scheduleName: string }[];
 }
 
 export interface GroupView {
   id: string;
   name: string;
-  assignedCount: number;
-  accessLevels: string[];
+  description?: string;
+  accessLevelNames: string[];
 }
 
 @Component({
   selector: 'app-access-rights-console',
   standalone: true,
-  imports: [CommonModule],
+  imports: [PageHeaderComponent, StatusBadgeComponent],
   template: `
-    <div class="access-rights-container">
-      <header class="top-header">
-        <h1>UMBRAL — Niveles de Acceso, Horarios y Grupos</h1>
-        <span class="status-pill active">● Matriz (Puerta × Horario) Activa</span>
-      </header>
+    <div class="p-6">
+      <app-page-header
+        title="Niveles de Acceso, Horarios y Grupos"
+        subtitle="Matriz puerta × horario que define qué puede abrir cada grupo de personas y cuándo."
+      >
+        <app-status-badge status tone="success">● Matriz conectada al backend</app-status-badge>
+      </app-page-header>
 
-      <main class="grid-layout">
-        <!-- Access Levels Panel -->
-        <section class="card">
-          <h2>Niveles de Acceso (Matriz Puerta × Horario)</h2>
-          <div class="al-list">
-            @for (al of accessLevels(); track al.id) {
-              <div class="al-item">
-                <div class="al-info">
-                  <span class="al-name">{{ al.name }}</span>
-                  <span class="al-detail">
-                    Puerta: <strong>{{ al.doorName }}</strong> · Horario: <span class="tag">{{ al.scheduleName }}</span>
-                  </span>
-                  <span class="window-info">Ventanas: {{ al.timeWindow }}</span>
-                </div>
+      @if (loadError()) {
+        <p class="text-sm text-danger">{{ loadError() }}</p>
+      } @else {
+        <main class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <section class="min-w-0 rounded-lg border border-border bg-surface p-5">
+            <h2 class="mb-3 text-base font-semibold text-text">Niveles de Acceso</h2>
+            @if (isLoading()) {
+              <p class="text-sm text-text-muted">Cargando…</p>
+            } @else if (accessLevels().length === 0) {
+              <p class="text-sm text-text-muted">No hay niveles de acceso registrados todavía.</p>
+            } @else {
+              <div class="u-table-wrap">
+                <table class="u-table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Entradas (puerta × horario)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (al of accessLevels(); track al.id) {
+                      <tr>
+                        <td>
+                          <div class="font-medium text-text">{{ al.name }}</div>
+                          @if (al.description) {
+                            <div class="text-xs text-text-muted">{{ al.description }}</div>
+                          }
+                        </td>
+                        <td>
+                          <div class="flex flex-wrap gap-1.5">
+                            @for (entry of al.entries; track entry.doorName + entry.scheduleName) {
+                              <app-status-badge tone="info">{{ entry.doorName }} · {{ entry.scheduleName }}</app-status-badge>
+                            }
+                            @empty {
+                              <span class="text-xs text-text-faint">Sin entradas configuradas</span>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             }
-          </div>
-        </section>
+          </section>
 
-        <!-- Groups & Assignments Panel -->
-        <section class="card">
-          <h2>Grupos y Asignaciones con Vigencia</h2>
-          <div class="group-list">
-            @for (grp of groups(); track grp.id) {
-              <div class="group-item">
-                <div class="group-info">
-                  <span class="group-name">{{ grp.name }}</span>
-                  <span class="group-meta">
-                    Personas asignadas: {{ grp.assignedCount }} · Niveles: {{ grp.accessLevels.join(', ') }}
-                  </span>
-                </div>
-                <span class="badge time-effective">Vigencia Efectiva</span>
+          <section class="min-w-0 rounded-lg border border-border bg-surface p-5">
+            <h2 class="mb-3 text-base font-semibold text-text">Grupos y Asignaciones</h2>
+            @if (isLoading()) {
+              <p class="text-sm text-text-muted">Cargando…</p>
+            } @else if (groups().length === 0) {
+              <p class="text-sm text-text-muted">No hay grupos registrados todavía.</p>
+            } @else {
+              <div class="u-table-wrap">
+                <table class="u-table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Niveles de acceso</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (grp of groups(); track grp.id) {
+                      <tr>
+                        <td>
+                          <div class="font-medium text-text">{{ grp.name }}</div>
+                          @if (grp.description) {
+                            <div class="text-xs text-text-muted">{{ grp.description }}</div>
+                          }
+                        </td>
+                        <td>
+                          <div class="flex flex-wrap gap-1.5">
+                            @for (name of grp.accessLevelNames; track name) {
+                              <app-status-badge tone="neutral">{{ name }}</app-status-badge>
+                            }
+                            @empty {
+                              <span class="text-xs text-text-faint">Sin niveles asignados</span>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             }
-          </div>
-        </section>
-      </main>
+          </section>
+        </main>
+      }
     </div>
   `,
-  styles: [`
-    .access-rights-container {
-      padding: 1.5rem;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--umbral-bg);
-      color: var(--umbral-text);
-      min-height: 100vh;
-    }
-
-    .top-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      border-bottom: 1px solid var(--umbral-surface);
-      padding-bottom: 1rem;
-    }
-
-    .status-pill.active {
-      background-color: var(--umbral-success-bg);
-      color: var(--umbral-success);
-      padding: 0.4rem 0.8rem;
-      border-radius: 9999px;
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-
-    .grid-layout {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-    }
-
-    .card {
-      background-color: var(--umbral-surface);
-      border-radius: 0.75rem;
-      padding: 1.25rem;
-      border: 1px solid var(--umbral-border);
-    }
-
-    h1, h2 {
-      margin-top: 0;
-      color: var(--umbral-text);
-    }
-
-    .al-item, .group-item {
-      background-color: var(--umbral-bg);
-      border: 1px solid var(--umbral-border);
-      padding: 1rem;
-      border-radius: 0.5rem;
-      margin-bottom: 0.75rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .al-info, .group-info {
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-    }
-
-    .al-name, .group-name {
-      font-weight: 600;
-      color: var(--umbral-text);
-    }
-
-    .al-detail, .group-meta {
-      font-size: 0.85rem;
-      color: var(--umbral-text-muted);
-    }
-
-    .tag {
-      color: var(--umbral-teal);
-      font-weight: 600;
-    }
-
-    .window-info {
-      font-size: 0.8rem;
-      color: var(--umbral-text-faint);
-      font-family: monospace;
-    }
-
-    .badge {
-      display: inline-block;
-      font-size: 0.75rem;
-      padding: 0.3rem 0.6rem;
-      border-radius: 0.25rem;
-      font-weight: 700;
-    }
-
-    .badge.time-effective {
-      background-color: var(--umbral-surface-2);
-      color: var(--umbral-teal);
-    }
-  `]
 })
-export class AccessRightsConsoleComponent {
-  protected readonly accessLevels = signal<AccessLevelView[]>([
-    {
-      id: 'al-1',
-      name: 'Acceso Oficina Central (L-V)',
-      doorName: 'SCN Room 9153',
-      scheduleName: 'Horario Laboral (07:00 - 19:00)',
-      timeWindow: 'L, M, X, J, V [07:00 - 19:00]',
-    },
-    {
-      id: 'al-2',
-      name: 'Acceso Parqueadero 24/7',
-      doorName: 'Barrera Vehicular',
-      scheduleName: 'Siempre Permitido (24/7)',
-      timeWindow: 'L - D [00:00 - 23:59]',
-    }
-  ]);
+export class AccessRightsConsoleComponent implements OnInit {
+  private readonly http = inject(HttpClient);
 
-  protected readonly groups = signal<GroupView[]>([
-    {
-      id: 'grp-1',
-      name: 'Personal Administrativo',
-      assignedCount: 45,
-      accessLevels: ['Acceso Oficina Central (L-V)', 'Acceso Parqueadero 24/7'],
-    },
-    {
-      id: 'grp-2',
-      name: 'Contratistas TI (Proyecto Temporal)',
-      assignedCount: 8,
-      accessLevels: ['Acceso Oficina Central (L-V)'],
-    }
-  ]);
+  protected readonly accessLevels = signal<AccessLevelView[]>([]);
+  protected readonly groups = signal<GroupView[]>([]);
+  protected readonly isLoading = signal(true);
+  protected readonly loadError = signal<string | null>(null);
+
+  ngOnInit(): void {
+    forkJoin({
+      accessLevels: this.http.get<AccessLevelDto[]>(`${API_BASE_URL}/access-rights/access-levels`),
+      groups: this.http.get<GroupDto[]>(`${API_BASE_URL}/access-rights/groups`),
+      schedules: this.http.get<ScheduleDto[]>(`${API_BASE_URL}/access-rights/schedules`),
+      doors: this.http.get<DoorDto[]>(`${API_BASE_URL}/topology/doors`),
+    }).subscribe({
+      next: ({ accessLevels, groups, schedules, doors }) => {
+        const scheduleNameById = new Map(schedules.map((s) => [s.id, s.name]));
+        const doorNameById = new Map(doors.map((d) => [d.door.props.id, d.hierarchicalName]));
+        const accessLevelNameById = new Map(accessLevels.map((al) => [al.id, al.name]));
+
+        this.accessLevels.set(
+          accessLevels.map((al) => ({
+            id: al.id,
+            name: al.name,
+            description: al.description,
+            entries: al.entries.map((e) => ({
+              doorName: doorNameById.get(e.doorId) ?? 'Puerta desconocida',
+              scheduleName: scheduleNameById.get(e.scheduleId) ?? 'Horario desconocido',
+            })),
+          })),
+        );
+
+        this.groups.set(
+          groups.map((g) => ({
+            id: g.id,
+            name: g.name,
+            description: g.description,
+            accessLevelNames: g.accessLevelIds.map(
+              (id) => accessLevelNameById.get(id) ?? 'Nivel desconocido',
+            ),
+          })),
+        );
+
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.loadError.set('No se pudo cargar la matriz de niveles de acceso desde el backend.');
+        this.isLoading.set(false);
+      },
+    });
+  }
 }

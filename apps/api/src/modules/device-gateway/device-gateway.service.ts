@@ -235,4 +235,39 @@ export class DeviceGatewayService {
   public getControllerMatrix(controllerId: string) {
     return this.controllerMatrixMap.get(controllerId) ?? null;
   }
+
+  // Combined, non-throwing status for listing — unlike getDeviceHealth, this
+  // returns sensible defaults for controllers that were never provisioned or
+  // never sent a heartbeat, instead of throwing NotFoundException.
+  public getControllerStatus(
+    controllerId: string,
+    currentServerMatrixVersion = 1,
+    at: Date = new Date(),
+    offlineThresholdMs = 30000,
+  ) {
+    const provisioning = this.provisioningMap.get(controllerId);
+    const health = this.healthLogsMap.get(controllerId);
+
+    const isOnline = health
+      ? at.getTime() - health.lastHeartbeatAt.getTime() <= offlineThresholdMs
+      : false;
+
+    return {
+      controllerId,
+      certificateStatus: provisioning?.status ?? 'unprovisioned',
+      certificateThumbprint: provisioning?.certificateThumbprint ?? null,
+      isOnline,
+      status: isOnline ? 'device.online' : 'device.offline',
+      lastSeenAt: health?.lastHeartbeatAt ?? null,
+      clockDriftMs: health?.clockDriftMs ?? 0,
+      clockDriftExceeded: (health?.clockDriftMs ?? 0) > 2000,
+      appliedMatrixVersion: health?.appliedMatrixVersion ?? 0,
+      currentServerMatrixVersion,
+      isMatrixUpToDate:
+        (health?.appliedMatrixVersion ?? 0) >= currentServerMatrixVersion,
+      requiresMatrixPush:
+        (health?.appliedMatrixVersion ?? 0) < currentServerMatrixVersion,
+      firmwareVersion: health?.firmwareVersion ?? null,
+    };
+  }
 }

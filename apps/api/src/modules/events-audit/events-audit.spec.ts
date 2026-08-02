@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { EventsAuditController } from './events-audit.controller';
 import { EventsAuditService } from './events-audit.service';
 
@@ -90,5 +91,55 @@ describe('EventsAuditModule', () => {
 
     const verification = controller.verifyChain({ chainPartition: partition });
     expect(verification.valid).toBe(true);
+  });
+
+  describe('pseudonymized feed and audited PII reveal', () => {
+    it('never exposes raw personId in the feed, only a pseudonym', () => {
+      controller.recordEvent({
+        chainPartition: 'ctrl-feed-1',
+        eventType: 'access.granted',
+        siteId: 'site-feed',
+        doorId: 'door-1',
+        personId: 'person-secret-1',
+      });
+
+      const feed = controller.getFeed('site-feed');
+      expect(feed).toHaveLength(1);
+      expect((feed[0] as any).personId).toBeUndefined();
+      expect(feed[0].hasPii).toBe(true);
+      expect(feed[0].pseudonymizedPersonId).toMatch(/^USR-[A-Z0-9]{6}$/);
+    });
+
+    it('rejects revealing PII for an event with no associated person', () => {
+      const evt = controller.recordEvent({
+        chainPartition: 'ctrl-feed-2',
+        eventType: 'input.fault',
+        siteId: 'site-feed',
+      });
+
+      expect(() =>
+        controller.revealPii(evt.id, { operatorUser: 'op@umbral.local' }),
+      ).toThrow(BadRequestException);
+    });
+
+    it('reveals PII and records an immutable audit log entry (DP-06)', () => {
+      const evt = controller.recordEvent({
+        chainPartition: 'ctrl-feed-3',
+        eventType: 'access.granted',
+        siteId: 'site-feed',
+        personId: 'person-secret-2',
+      });
+
+      const reveal = controller.revealPii(evt.id, {
+        operatorUser: 'op@umbral.local',
+      });
+      expect(reveal.rawPersonId).toBe('person-secret-2');
+      expect(reveal.pseudonymizedPersonId).toMatch(/^USR-[A-Z0-9]{6}$/);
+
+      const logs = controller.getPiiAuditLogs();
+      expect(logs).toHaveLength(1);
+      expect(logs[0].operatorUser).toBe('op@umbral.local');
+      expect(logs[0].revealedPersonId).toBe('person-secret-2');
+    });
   });
 });

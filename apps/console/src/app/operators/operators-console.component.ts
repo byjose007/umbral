@@ -4,6 +4,9 @@ import { RouterLink } from '@angular/router';
 import { API_BASE_URL } from '../api-base-url';
 import { Operator, OperatorRole } from '../auth/models';
 import { ToastService } from '../shared/ui/toast.service';
+import { PageHeaderComponent } from '../shared/ui/page-header.component';
+import { StatusBadgeComponent } from '../shared/ui/status-badge.component';
+import { ModalComponent } from '../shared/ui/modal.component';
 
 const ROLE_OPTIONS: { value: OperatorRole; label: string }[] = [
   { value: 'guardia', label: 'Guardia de Seguridad (PWA Garita)' },
@@ -23,22 +26,20 @@ interface CreateOperatorForm {
 @Component({
   selector: 'app-operators-console',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, PageHeaderComponent, StatusBadgeComponent, ModalComponent],
   template: `
     <div class="p-6">
-      <header class="mb-6 border-b border-border pb-4">
-        <h1 class="text-xl font-semibold text-text">🛡️ Personal de Garita y Administradores</h1>
-        <p class="mt-1 text-sm text-text-muted">
-          Cuentas administrativas (Consola Web) y personal operativo (PWA de Garita para escanear pases).
-        </p>
-      </header>
+      <app-page-header
+        title="Personal de Garita y Administradores"
+        subtitle="Cuentas administrativas (Consola Web) y personal operativo (PWA de Garita para escanear pases)."
+      />
 
       <!-- Banner de orientación UX -->
       <div class="mb-6 rounded-lg border border-accent/40 bg-accent/10 p-4 text-sm text-text flex items-center justify-between gap-4">
         <div>
-          <strong class="text-accent font-semibold">💡 ¿Buscas registrar un usuario para que use el Pase QR en su móvil (Empleado, Contratista, Cliente, Invitado)?</strong>
+          <strong class="text-accent font-semibold">¿Buscas registrar un usuario para que use el Pase QR en su móvil (Empleado, Contratista, Cliente, Invitado)?</strong>
           <p class="mt-1 text-xs text-text-muted">
-            Esas personas <strong>no se registran aquí</strong>. Ve a <strong>"👥 Usuarios y Pases Móviles"</strong> en el menú lateral. Esta sección es exclusiva para crear cuentas a <strong>Guardias / Recepción</strong> y <strong>Administradores de la consola</strong>.
+            Esas personas <strong>no se registran aquí</strong>. Ve a <strong>"Usuarios y Pases Móviles"</strong> en el menú lateral. Esta sección es exclusiva para crear cuentas a <strong>Guardias / Recepción</strong> y <strong>Administradores de la consola</strong>.
           </p>
         </div>
         <a routerLink="/identity" class="shrink-0 rounded-md bg-accent px-3 py-2 text-xs font-bold text-accent-text hover:bg-accent-hover no-underline">
@@ -50,7 +51,7 @@ interface CreateOperatorForm {
         <p class="text-sm text-danger">{{ loadError() }}</p>
       } @else {
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
-          <section class="rounded-lg border border-border bg-surface p-5">
+          <section class="min-w-0 rounded-lg border border-border bg-surface p-5">
             <h2 class="mb-3 text-base font-semibold text-text">Cuentas Registradas</h2>
 
             @if (isLoading()) {
@@ -58,76 +59,86 @@ interface CreateOperatorForm {
             } @else if (operators().length === 0) {
               <p class="text-sm text-text-muted">No hay operadores todavía.</p>
             } @else {
-              <div class="space-y-3">
-                @for (op of operators(); track op.id) {
-                  <div class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-bg px-4 py-3">
-                    <div class="flex flex-col gap-1">
-                      <span class="font-medium text-text">{{ op.fullName }}</span>
-                      <span class="text-sm text-text-muted">{{ op.email }}</span>
-                    </div>
+              <div class="u-table-wrap">
+                <table class="u-table">
+                  <thead>
+                    <tr>
+                      <th>Operador</th>
+                      <th>Rol</th>
+                      <th>Estado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (op of operators(); track op.id) {
+                      <tr>
+                        <td>
+                          <div class="font-medium text-text">{{ op.fullName }}</div>
+                          <div class="text-xs text-text-muted">{{ op.email }}</div>
+                        </td>
+                        <td>
+                          <select
+                            class="rounded-md border border-border bg-surface-2 px-2 py-1 text-sm text-text capitalize"
+                            [value]="op.role"
+                            (change)="onRoleChange(op, $any($event.target).value)"
+                          >
+                            @for (opt of roleOptions; track opt.value) {
+                              <option [value]="opt.value">{{ opt.label }}</option>
+                            }
+                          </select>
+                        </td>
+                        <td>
+                          @if (op.status === 'active') {
+                            <app-status-badge tone="success">ACTIVO</app-status-badge>
+                          } @else {
+                            <app-status-badge tone="danger">DESHABILITADO</app-status-badge>
+                          }
+                        </td>
+                        <td>
+                          <div class="flex flex-wrap items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              class="rounded-md border border-border px-3 py-1.5 text-sm text-text-muted hover:bg-surface-hover hover:text-text"
+                              (click)="onToggleStatus(op)"
+                            >
+                              {{ op.status === 'active' ? 'Deshabilitar' : 'Habilitar' }}
+                            </button>
 
-                    <div class="flex items-center gap-2">
-                      <select
-                        class="rounded-md border border-border bg-surface-2 px-2 py-1 text-sm text-text capitalize"
-                        [value]="op.role"
-                        (change)="onRoleChange(op, $any($event.target).value)"
-                      >
-                        @for (opt of roleOptions; track opt.value) {
-                          <option [value]="opt.value">{{ opt.label }}</option>
-                        }
-                      </select>
-
-                      @if (op.status === 'active') {
-                        <span class="rounded bg-success-bg px-2 py-1 text-xs font-bold text-success">
-                          ACTIVO
-                        </span>
-                      } @else {
-                        <span class="rounded bg-danger-bg px-2 py-1 text-xs font-bold text-danger">
-                          DESHABILITADO
-                        </span>
-                      }
-
-                      <button
-                        type="button"
-                        class="rounded-md border border-border px-3 py-1.5 text-sm text-text-muted hover:bg-surface-hover hover:text-text"
-                        (click)="onToggleStatus(op)"
-                      >
-                        {{ op.status === 'active' ? 'Deshabilitar' : 'Habilitar' }}
-                      </button>
-
-                      <button
-                        type="button"
-                        class="rounded-md border border-border px-3 py-1.5 text-sm text-accent hover:bg-surface-hover"
-                        (click)="onResetPassword(op)"
-                      >
-                        Resetear Clave
-                      </button>
-                    </div>
-                  </div>
-                }
+                            <button
+                              type="button"
+                              class="rounded-md border border-border px-3 py-1.5 text-sm text-accent hover:bg-surface-hover"
+                              (click)="onResetPassword(op)"
+                            >
+                              Resetear clave
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             }
 
-            @if (resetModalData()) {
-              <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-                <div class="w-full max-w-md rounded-lg border border-border bg-surface p-6">
-                  <h3 class="text-lg font-semibold text-text mb-2">🔑 Contraseña Temporal Generada</h3>
-                  <p class="text-sm text-text-muted mb-4">
-                    Entrega esta clave temporal al operador <strong>{{ resetModalData()?.fullName }}</strong>. Deberá usarla para iniciar sesión en la PWA de garita.
-                  </p>
-                  <div class="mb-4 rounded-md border border-accent bg-surface-2 p-3 text-center font-mono text-lg font-bold text-accent">
-                    {{ resetModalData()?.temporaryPassword }}
-                  </div>
-                  <button
-                    type="button"
-                    class="w-full rounded-md bg-accent py-2 font-medium text-accent-text hover:bg-accent-hover"
-                    (click)="resetModalData.set(null)"
-                  >
-                    Entendido / Cerrar
-                  </button>
-                </div>
+            <app-modal
+              [open]="!!resetModalData()"
+              title="Contraseña temporal generada"
+              (closed)="resetModalData.set(null)"
+            >
+              <p class="text-sm text-text-muted mb-4">
+                Entrega esta clave temporal al operador <strong>{{ resetModalData()?.fullName }}</strong>. Deberá usarla para iniciar sesión en la PWA de garita.
+              </p>
+              <div class="mb-4 rounded-md border border-accent bg-surface-2 p-3 text-center font-mono text-lg font-bold text-accent">
+                {{ resetModalData()?.temporaryPassword }}
               </div>
-            }
+              <button
+                type="button"
+                class="w-full rounded-md bg-accent py-2 font-medium text-accent-text hover:bg-accent-hover"
+                (click)="resetModalData.set(null)"
+              >
+                Entendido / cerrar
+              </button>
+            </app-modal>
           </section>
 
           <section class="rounded-lg border border-border bg-surface p-5">

@@ -44,3 +44,19 @@ export const accessEvents = pgTable(
     personIdIdx: index('idx_events_person_id').on(table.personId),
   }),
 );
+
+export const eventPiiAuditLogs = pgTable(
+  'event_pii_audit_logs',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    eventId: varchar('event_id', { length: 36 })
+      .notNull()
+      .references(() => accessEvents.id),
+    operatorUser: varchar('operator_user', { length: 128 }).notNull(),
+    revealedPersonId: varchar('revealed_person_id', { length: 36 }).notNull(),
+    revealedAt: timestamp('revealed_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    eventIdIdx: index('idx_event_pii_audit_event_id').on(table.eventId),
+  }),
+);

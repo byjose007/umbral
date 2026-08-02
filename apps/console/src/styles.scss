@@ -16,3 +16,35 @@ body {
   color: var(--umbral-text);
   font-family: var(--umbral-font-sans);
 }
+
+/* Shared table styling — every console page renders its own <table> with its own
+   columns, but they all use these classes so they look like one system. */
+@layer components {
+  .u-table-wrap {
+    @apply overflow-x-auto rounded-lg border border-border bg-surface;
+  }
+
+  .u-table {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .u-table thead {
+    @apply bg-surface-2;
+  }
+
+  .u-table th {
+    @apply whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-muted;
+  }
+
+  .u-table td {
+    @apply px-4 py-3 align-middle text-text;
+  }
+
+  .u-table tbody tr {
+    @apply border-t border-border;
+  }
+
+  .u-table tbody tr:hover {
+    @apply bg-surface-hover;
+  }
+}

@@ -1,8 +1,13 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   AccessEvent,
   computeEventHash,
   verifyEventChain,
+  pseudonymize,
   GENESIS_HASH,
   makeAccessEventId,
   makeSiteId,
@@ -16,12 +21,23 @@ import {
   QueryEventsDto,
   VerifyChainDto,
   PurgeEventsDto,
+  QueryFeedDto,
+  RevealEventPiiDto,
 } from './dto/events-audit.dto';
 import { v4 as uuidv4 } from './uuid';
+
+export interface EventPiiAuditRecord {
+  id: string;
+  eventId: string;
+  operatorUser: string;
+  revealedPersonId: string;
+  revealedAt: Date;
+}
 
 @Injectable()
 export class EventsAuditService {
   private readonly eventsByPartitionMap = new Map<string, AccessEvent[]>();
+  private readonly piiAuditLogs: EventPiiAuditRecord[] = [];
 
   public recordEvent(dto: RecordEventDto) {
     const partition = dto.chainPartition;
@@ -110,6 +126,77 @@ export class EventsAuditService {
     }
 
     return allEvents.map((e) => e.props);
+  }
+
+  public getFeed(query: QueryFeedDto) {
+    let allEvents: AccessEvent[] = [];
+    for (const list of this.eventsByPartitionMap.values()) {
+      allEvents.push(...list);
+    }
+
+    if (query.siteId) {
+      allEvents = allEvents.filter((e) => e.siteId === query.siteId);
+    }
+
+    allEvents.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    if (query.limit && query.limit > 0) {
+      allEvents = allEvents.slice(0, query.limit);
+    }
+
+    return allEvents.map((e) => {
+      const { personId, ...rest } = e.props;
+      return {
+        ...rest,
+        pseudonymizedPersonId: personId ? pseudonymize(personId) : null,
+        hasPii: !!personId,
+      };
+    });
+  }
+
+  public revealEventPii(eventId: string, dto: RevealEventPiiDto) {
+    const event = this.findEventById(eventId);
+    if (!event) {
+      throw new NotFoundException(`Event ${eventId} not found`);
+    }
+    if (!event.personId) {
+      throw new BadRequestException(
+        `No person PII associated with event ${eventId}`,
+      );
+    }
+
+    const auditRecord: EventPiiAuditRecord = {
+      id: uuidv4(),
+      eventId,
+      operatorUser: dto.operatorUser,
+      revealedPersonId: event.personId,
+      revealedAt: new Date(),
+    };
+
+    this.piiAuditLogs.push(auditRecord);
+
+    return {
+      eventId,
+      operatorUser: dto.operatorUser,
+      pseudonymizedPersonId: pseudonymize(event.personId),
+      rawPersonId: event.personId,
+      revealedAt: auditRecord.revealedAt,
+      auditLogId: auditRecord.id,
+    };
+  }
+
+  public getPiiAuditLogs() {
+    return this.piiAuditLogs;
+  }
+
+  private findEventById(eventId: string): AccessEvent | undefined {
+    for (const list of this.eventsByPartitionMap.values()) {
+      const found = list.find((e) => e.id === eventId);
+      if (found) {
+        return found;
+      }
+    }
+    return undefined;
   }
 
   public verifyChain(dto: VerifyChainDto) {

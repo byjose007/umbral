@@ -1,249 +1,296 @@
-import { Component, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { forkJoin, of } from 'rxjs';
+import { switchMap, map } from 'rxjs/operators';
+import { API_BASE_URL } from '../api-base-url';
+import { ToastService } from '../shared/ui/toast.service';
+import { PageHeaderComponent } from '../shared/ui/page-header.component';
+import { StatusBadgeComponent } from '../shared/ui/status-badge.component';
+import { ModalComponent } from '../shared/ui/modal.component';
+import { PaginationComponent } from '../shared/ui/pagination.component';
+
+interface PersonDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface PersonsPageDto {
+  items: PersonDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+interface CredentialDto {
+  id: string;
+  personId: string;
+  credentialType: string;
+  credentialHash: string;
+  status: 'active' | 'blocked' | 'expired' | 'revoked';
+  blockReason?: string | null;
+}
 
 export interface CredentialView {
   id: string;
   personName: string;
   credentialType: string;
-  credentialHash: string; // SHA-256 preview
-  status: 'active' | 'blocked' | 'expired';
+  credentialHash: string;
+  status: 'active' | 'blocked' | 'expired' | 'revoked';
   blockReason?: string | null;
 }
+
+const PAGE_SIZE = 10;
 
 @Component({
   selector: 'app-credentials-console',
   standalone: true,
-  imports: [CommonModule],
+  imports: [PageHeaderComponent, StatusBadgeComponent, ModalComponent, PaginationComponent],
   template: `
-    <div class="credentials-container">
-      <header class="top-header">
-        <h1>UMBRAL — Emisión y Ciclo de Vida de Credenciales</h1>
-        <span class="status-pill secure">🔒 Almacenamiento en Hash Inreversible (SHA-256)</span>
-      </header>
+    <div class="p-6">
+      <app-page-header
+        title="Emisión y Ciclo de Vida de Credenciales"
+        subtitle="Cada credencial se almacena como hash SHA-256 irreversible; el número en claro nunca se guarda."
+      >
+        <app-status-badge status tone="info">● Almacenamiento en hash irreversible</app-status-badge>
+      </app-page-header>
 
-      <main class="grid-layout">
-        <!-- Credential List Panel -->
-        <section class="card">
-          <h2>Credenciales Emitidas</h2>
-          <div class="credential-list">
-            @for (cred of credentials(); track cred.id) {
-              <div class="credential-item" [class.blocked]="cred.status === 'blocked'">
-                <div class="cred-info">
-                  <span class="person-name">{{ cred.personName }}</span>
-                  <span class="type-tag">{{ cred.credentialType }}</span>
-                  <span class="hash-preview" title="Número en claro nunca almacenado">
-                    Hash: <code>{{ cred.credentialHash.substring(0, 16) }}...</code>
-                  </span>
-                </div>
+      @if (loadError()) {
+        <p class="text-sm text-danger">{{ loadError() }}</p>
+      } @else {
+        <main class="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
+          <section class="min-w-0 rounded-lg border border-border bg-surface p-5">
+            <h2 class="mb-3 text-base font-semibold text-text">Credenciales Emitidas</h2>
 
-                <div class="cred-status">
-                  @if (cred.status === 'active') {
-                    <span class="badge active">ACTIVA</span>
-                    <button class="btn btn-block" (click)="blockCredential(cred)">Bloquear</button>
-                  } @else {
-                    <span class="badge blocked" [title]="cred.blockReason">
-                      BLOQUEADA: {{ cred.blockReason }}
-                    </span>
-                  }
-                </div>
+            @if (isLoading()) {
+              <p class="text-sm text-text-muted">Cargando…</p>
+            } @else if (credentials().length === 0) {
+              <p class="text-sm text-text-muted">Las personas de esta página no tienen credenciales emitidas.</p>
+            } @else {
+              <div class="u-table-wrap">
+                <table class="u-table">
+                  <thead>
+                    <tr>
+                      <th>Persona</th>
+                      <th>Tipo</th>
+                      <th>Hash</th>
+                      <th>Estado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (cred of credentials(); track cred.id) {
+                      <tr>
+                        <td class="font-medium text-text">{{ cred.personName }}</td>
+                        <td>{{ cred.credentialType }}</td>
+                        <td>
+                          <code class="font-mono text-xs text-text-muted">{{ cred.credentialHash.substring(0, 16) }}…</code>
+                        </td>
+                        <td>
+                          @if (cred.status === 'active') {
+                            <app-status-badge tone="success">ACTIVA</app-status-badge>
+                          } @else {
+                            <app-status-badge tone="danger" [attr.title]="cred.blockReason">
+                              {{ cred.status === 'blocked' ? 'BLOQUEADA' : cred.status.toUpperCase() }}
+                            </app-status-badge>
+                          }
+                        </td>
+                        <td>
+                          @if (cred.status === 'active') {
+                            <button
+                              type="button"
+                              class="rounded-md border border-danger px-2.5 py-1 text-xs font-medium text-danger hover:bg-danger-bg"
+                              (click)="openBlockModal(cred)"
+                            >
+                              Bloquear
+                            </button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             }
-          </div>
-        </section>
 
-        <!-- QR Dynamic & Duress Info Panel -->
-        <section class="card">
-          <h2>Mecanismos de Seguridad Integrados</h2>
-          <div class="info-box">
-            <div class="sec-item">
-              <h3>📱 QR Dinámico Firmado (ES256)</h3>
-              <p>
-                Los códigos QR rotan periódicamente con un nonce único. La PWA del guardia
-                verifica la firma digital localmente sin requerir conexión al servidor.
-              </p>
-            </div>
+            <app-pagination [page]="page()" [totalPages]="totalPages()" [total]="total()" (pageChange)="loadPage($event)" />
 
-            <div class="sec-item">
-              <h3>🚨 Código de Coacción (Duress PIN)</h3>
-              <p>
-                En situaciones de secuestro o amenaza, el usuario introduce su PIN de coacción.
-                El sistema concede el acceso para proteger su vida pero genera de inmediato una
-                alerta crítica silenciosa al centro de monitoreo.
+            <app-modal
+              [open]="!!blockModalData()"
+              title="Bloquear credencial"
+              (closed)="closeBlockModal()"
+            >
+              <p class="text-sm text-text-muted mb-3">
+                Vas a bloquear la credencial de <strong>{{ blockModalData()?.personName }}</strong>. Indica el motivo para el registro de auditoría.
               </p>
-            </div>
+              <textarea
+                class="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text focus:outline-none focus:border-accent"
+                rows="3"
+                placeholder="Ej: Tarjeta extraviada en recepción"
+                [value]="blockReason()"
+                (input)="blockReason.set($any($event.target).value)"
+              ></textarea>
+              @if (blockError()) {
+                <p class="mt-2 text-sm text-danger">{{ blockError() }}</p>
+              }
+              <div class="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-md border border-border px-3 py-1.5 text-sm text-text-muted hover:bg-surface-hover hover:text-text"
+                  (click)="closeBlockModal()"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md bg-danger px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                  [disabled]="isBlocking()"
+                  (click)="confirmBlock()"
+                >
+                  {{ isBlocking() ? 'Bloqueando…' : 'Bloquear credencial' }}
+                </button>
+              </div>
+            </app-modal>
+          </section>
 
-            <div class="sec-item">
-              <h3>🚫 Prohibición de Tecnologías Clonables</h3>
-              <p>
-                Se prohíben 125 kHz y MIFARE Classic. Se adopta DESFire EV2/EV3 y mTLS como estándar.
-              </p>
+          <section class="rounded-lg border border-border bg-surface p-5">
+            <h2 class="mb-3 text-base font-semibold text-text">Mecanismos de Seguridad Integrados</h2>
+            <div class="flex flex-col gap-4">
+              <div class="rounded-md border border-border bg-bg p-4">
+                <h3 class="mb-1 text-sm font-semibold text-text">QR dinámico firmado (ES256)</h3>
+                <p class="text-sm text-text-muted leading-relaxed">
+                  Los códigos QR rotan periódicamente con un nonce único. La PWA del guardia verifica la firma digital localmente sin requerir conexión al servidor.
+                </p>
+              </div>
+              <div class="rounded-md border border-border bg-bg p-4">
+                <h3 class="mb-1 text-sm font-semibold text-text">Código de coacción (duress PIN)</h3>
+                <p class="text-sm text-text-muted leading-relaxed">
+                  En situaciones de coacción, el usuario introduce su PIN de coacción. El sistema concede el acceso para proteger su vida pero genera de inmediato una alerta crítica silenciosa al centro de monitoreo.
+                </p>
+              </div>
+              <div class="rounded-md border border-border bg-bg p-4">
+                <h3 class="mb-1 text-sm font-semibold text-text">Prohibición de tecnologías clonables</h3>
+                <p class="text-sm text-text-muted leading-relaxed">
+                  Se prohíben 125 kHz y MIFARE Classic. Se adopta DESFire EV2/EV3 y mTLS como estándar.
+                </p>
+              </div>
             </div>
-          </div>
-        </section>
-      </main>
+          </section>
+        </main>
+      }
     </div>
   `,
-  styles: [`
-    .credentials-container {
-      padding: 1.5rem;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--umbral-bg);
-      color: var(--umbral-text);
-      min-height: 100vh;
-    }
-
-    .top-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      border-bottom: 1px solid var(--umbral-surface);
-      padding-bottom: 1rem;
-    }
-
-    .status-pill.secure {
-      background-color: var(--umbral-surface-2);
-      color: var(--umbral-teal);
-      padding: 0.4rem 0.8rem;
-      border-radius: 9999px;
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-
-    .grid-layout {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-    }
-
-    .card {
-      background-color: var(--umbral-surface);
-      border-radius: 0.75rem;
-      padding: 1.25rem;
-      border: 1px solid var(--umbral-border);
-    }
-
-    h1, h2, h3 {
-      margin-top: 0;
-      color: var(--umbral-text);
-    }
-
-    .credential-item {
-      background-color: var(--umbral-bg);
-      border: 1px solid var(--umbral-border);
-      padding: 1rem;
-      border-radius: 0.5rem;
-      margin-bottom: 0.75rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      &.blocked {
-        border-color: var(--umbral-danger);
-      }
-    }
-
-    .cred-info {
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-    }
-
-    .person-name {
-      font-weight: 600;
-      color: var(--umbral-text);
-    }
-
-    .type-tag {
-      font-size: 0.8rem;
-      color: var(--umbral-teal);
-      font-weight: 600;
-    }
-
-    .hash-preview {
-      font-size: 0.8rem;
-      color: var(--umbral-text-muted);
-    }
-
-    .badge {
-      display: inline-block;
-      font-size: 0.75rem;
-      padding: 0.3rem 0.6rem;
-      border-radius: 0.25rem;
-      font-weight: 700;
-      margin-right: 0.5rem;
-    }
-
-    .badge.active {
-      background-color: var(--umbral-success-bg);
-      color: var(--umbral-success);
-    }
-
-    .badge.blocked {
-      background-color: var(--umbral-danger-bg);
-      color: var(--umbral-danger);
-    }
-
-    .btn-block {
-      background-color: var(--umbral-danger);
-      color: white;
-      border: none;
-      padding: 0.35rem 0.7rem;
-      border-radius: 0.25rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 0.8rem;
-    }
-
-    .info-box {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .sec-item {
-      background-color: var(--umbral-bg);
-      padding: 1rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--umbral-border);
-
-      p {
-        margin-bottom: 0;
-        font-size: 0.875rem;
-        color: var(--umbral-text-muted);
-        line-height: 1.4;
-      }
-    }
-  `]
 })
-export class CredentialsConsoleComponent {
-  protected readonly credentials = signal<CredentialView[]>([
-    {
-      id: 'c-1',
-      personName: 'Carlos Mendoza',
-      credentialType: 'MIFARE DESFire EV3',
-      credentialHash: 'a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0',
-      status: 'active',
-    },
-    {
-      id: 'c-2',
-      personName: 'Carlos Mendoza',
-      credentialType: 'QR Dinámico (PWA)',
-      credentialHash: 'f9e8d7c6b5a43210987654321fedcba0987654321fedcba0987654321fedcba0',
-      status: 'active',
-    },
-    {
-      id: 'c-3',
-      personName: 'Lucía Vera',
-      credentialType: 'MIFARE DESFire EV2',
-      credentialHash: '11223344556677889900aabbccddeeff11223344556677889900aabbccddeeff',
-      status: 'blocked',
-      blockReason: 'Tarjeta extraviada en recepción',
-    }
-  ]);
+export class CredentialsConsoleComponent implements OnInit {
+  private readonly http = inject(HttpClient);
+  private readonly toastService = inject(ToastService);
 
-  protected blockCredential(cred: CredentialView): void {
-    cred.status = 'blocked';
-    cred.blockReason = 'Bloqueada manualmente desde consola';
+  protected readonly credentials = signal<CredentialView[]>([]);
+  protected readonly total = signal(0);
+  protected readonly page = signal(1);
+  protected readonly isLoading = signal(true);
+  protected readonly loadError = signal<string | null>(null);
+
+  protected readonly blockModalData = signal<{ credentialId: string; personName: string } | null>(null);
+  protected readonly blockReason = signal('');
+  protected readonly blockError = signal<string | null>(null);
+  protected readonly isBlocking = signal(false);
+
+  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / PAGE_SIZE)));
+
+  ngOnInit(): void {
+    this.loadPage(1);
+  }
+
+  protected loadPage(page: number): void {
+    this.isLoading.set(true);
+    this.loadError.set(null);
+
+    this.http
+      .get<PersonsPageDto>(`${API_BASE_URL}/identity/persons`, {
+        params: { page: String(page), pageSize: String(PAGE_SIZE) },
+      })
+      .pipe(
+        switchMap((pageResult) => {
+          if (pageResult.items.length === 0) {
+            return of({ pageResult, credentialsByPerson: [] as CredentialDto[][] });
+          }
+          return forkJoin(
+            pageResult.items.map((person) =>
+              this.http.get<CredentialDto[]>(`${API_BASE_URL}/credentials/person/${person.id}`),
+            ),
+          ).pipe(map((credentialsByPerson) => ({ pageResult, credentialsByPerson })));
+        }),
+      )
+      .subscribe({
+        next: ({ pageResult, credentialsByPerson }) => {
+          const personNameById = new Map(
+            pageResult.items.map((p) => [p.id, `${p.firstName} ${p.lastName}`]),
+          );
+
+          const views: CredentialView[] = [];
+          credentialsByPerson.forEach((creds) => {
+            creds.forEach((cred) => {
+              views.push({
+                id: cred.id,
+                personName: personNameById.get(cred.personId) ?? 'Persona desconocida',
+                credentialType: cred.credentialType,
+                credentialHash: cred.credentialHash,
+                status: cred.status,
+                blockReason: cred.blockReason,
+              });
+            });
+          });
+
+          this.credentials.set(views);
+          this.total.set(pageResult.total);
+          this.page.set(pageResult.page);
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.loadError.set('No se pudo cargar la lista de credenciales desde el backend.');
+          this.isLoading.set(false);
+        },
+      });
+  }
+
+  protected openBlockModal(cred: CredentialView): void {
+    this.blockError.set(null);
+    this.blockReason.set('');
+    this.blockModalData.set({ credentialId: cred.id, personName: cred.personName });
+  }
+
+  protected closeBlockModal(): void {
+    this.blockModalData.set(null);
+  }
+
+  protected confirmBlock(): void {
+    const target = this.blockModalData();
+    if (!target) {
+      return;
+    }
+    if (!this.blockReason().trim()) {
+      this.blockError.set('Indica un motivo para el bloqueo.');
+      return;
+    }
+
+    this.isBlocking.set(true);
+    this.http
+      .post(`${API_BASE_URL}/credentials/block`, {
+        credentialId: target.credentialId,
+        reason: this.blockReason().trim(),
+      })
+      .subscribe({
+        next: () => {
+          this.isBlocking.set(false);
+          this.blockModalData.set(null);
+          this.toastService.success(`Credencial de ${target.personName} bloqueada.`);
+          this.loadPage(this.page());
+        },
+        error: () => {
+          this.isBlocking.set(false);
+          this.blockError.set('No se pudo bloquear la credencial.');
+        },
+      });
   }
 }

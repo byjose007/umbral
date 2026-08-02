@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { DeviceGatewayService } from './device-gateway.service';
 import { MqttDoorControllerAdapter } from './mqtt-door-controller.adapter';
+import { TopologyService } from '../topology/topology.service';
 import {
   ProvisionDeviceDto,
   RevokeCertificateDto,
@@ -16,7 +17,25 @@ export class DeviceGatewayController {
   constructor(
     private readonly deviceGatewayService: DeviceGatewayService,
     private readonly doorControllerAdapter: MqttDoorControllerAdapter,
+    private readonly topologyService: TopologyService,
   ) {}
+
+  /** GET /device-gateway/controllers — combined view (topology + provisioning + health) for the console UI. */
+  @Get('controllers')
+  listControllers(
+    @Query('siteId') siteId?: string,
+    @Query('serverMatrixVersion') serverMatrixVersion?: string,
+  ) {
+    const version = serverMatrixVersion ? parseInt(serverMatrixVersion, 10) : 1;
+    return this.topologyService
+      .getControllers()
+      .map((c) => c.props)
+      .filter((c) => !siteId || c.siteId === siteId)
+      .map((c) => ({
+        ...c,
+        ...this.deviceGatewayService.getControllerStatus(c.id, version),
+      }));
+  }
 
   @Post('provision')
   provisionDevice(@Body() dto: ProvisionDeviceDto) {

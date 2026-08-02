@@ -1,10 +1,19 @@
-import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { EventsAuditService } from './events-audit.service';
 import {
   RecordEventDto,
   QueryEventsDto,
   VerifyChainDto,
   PurgeEventsDto,
+  RevealEventPiiDto,
 } from './dto/events-audit.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -31,6 +40,24 @@ export class EventsAuditController {
       personId,
       limit: limit ? parseInt(limit, 10) : undefined,
     });
+  }
+
+  @Get('feed')
+  getFeed(@Query('siteId') siteId?: string, @Query('limit') limit?: string) {
+    return this.eventsAuditService.getFeed({
+      siteId,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
+  }
+
+  @Post('events/:id/reveal-pii')
+  revealPii(@Param('id') id: string, @Body() dto: RevealEventPiiDto) {
+    return this.eventsAuditService.revealEventPii(id, dto);
+  }
+
+  @Get('pii-audit-logs')
+  getPiiAuditLogs() {
+    return this.eventsAuditService.getPiiAuditLogs();
   }
 
   @Post('verify-chain')

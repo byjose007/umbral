@@ -4,6 +4,8 @@ import { forkJoin } from 'rxjs';
 import { API_BASE_URL } from '../api-base-url';
 import { ToastService } from '../shared/ui/toast.service';
 import { ConfirmService } from '../shared/ui/confirm.service';
+import { PageHeaderComponent } from '../shared/ui/page-header.component';
+import { StatusBadgeComponent } from '../shared/ui/status-badge.component';
 
 interface SiteDto {
   props: { id: string; code: string; name: string; timezone: string };
@@ -43,22 +45,18 @@ interface ActionLogEntry {
 @Component({
   selector: 'app-topology-console',
   standalone: true,
+  imports: [PageHeaderComponent, StatusBadgeComponent],
   template: `
     <div class="p-6">
-      <header class="mb-6 flex items-center justify-between border-b border-border pb-4">
-        <h1 class="text-xl font-semibold text-text">Consola de Topología y Simulador</h1>
+      <app-page-header title="Consola de Topología y Simulador">
         @if (isLoading()) {
-          <span class="rounded-full bg-surface-2 px-3 py-1 text-sm text-text-muted">Cargando…</span>
+          <app-status-badge status tone="neutral">Cargando…</app-status-badge>
         } @else if (loadError()) {
-          <span class="rounded-full bg-danger-bg px-3 py-1 text-sm font-semibold text-danger">
-            ● Sin conexión con el backend
-          </span>
+          <app-status-badge status tone="danger">● Sin conexión con el backend</app-status-badge>
         } @else {
-          <span class="rounded-full bg-success-bg px-3 py-1 text-sm font-semibold text-success">
-            ● Simulador en Línea
-          </span>
+          <app-status-badge status tone="success">● Simulador en línea</app-status-badge>
         }
-      </header>
+      </app-page-header>
 
       @if (loadError()) {
         <p class="text-sm text-danger">{{ loadError() }}</p>
@@ -80,50 +78,61 @@ interface ActionLogEntry {
             </div>
           </section>
 
-          <section class="rounded-lg border border-border bg-surface p-5">
+          <section class="min-w-0 rounded-lg border border-border bg-surface p-5">
             <h2 class="mb-3 text-base font-semibold text-text">Puertas y Dispositivos</h2>
-            <div class="space-y-3">
-              @for (door of doors(); track door.id) {
-                <div class="flex items-center justify-between rounded-md border border-border bg-bg px-4 py-3">
-                  <div class="flex flex-col gap-1">
-                    <span class="font-medium text-text">{{ door.hierarchicalName }}</span>
-                    <span class="text-sm text-text-muted">Perfil: {{ door.lockProfileName }}</span>
-                    <div class="flex gap-2">
-                      @if (door.dpsSupervised) {
-                        <span class="rounded bg-success-bg px-2 py-0.5 text-xs font-semibold text-success">
-                          DPS supervisado
-                        </span>
-                      }
-                      @if (door.rexSupervised) {
-                        <span class="rounded bg-success-bg px-2 py-0.5 text-xs font-semibold text-success">
-                          REX supervisado
-                        </span>
-                      }
-                    </div>
-                  </div>
-
-                  <div class="flex gap-2">
-                    <button
-                      type="button"
-                      class="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-text hover:bg-accent-hover"
-                      (click)="grantAccess(door)"
-                    >
-                      Abrir Puerta
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-md border border-danger px-3 py-1.5 text-sm font-medium text-danger hover:bg-danger-bg"
-                      (click)="triggerForcedOpen(door)"
-                    >
-                      Simular Forzada
-                    </button>
-                  </div>
-                </div>
-              }
-              @empty {
-                <p class="text-sm text-text-muted">No hay puertas registradas todavía.</p>
-              }
-            </div>
+            @if (doors().length === 0) {
+              <p class="text-sm text-text-muted">No hay puertas registradas todavía.</p>
+            } @else {
+              <div class="u-table-wrap">
+                <table class="u-table">
+                  <thead>
+                    <tr>
+                      <th>Puerta</th>
+                      <th>Supervisión</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (door of doors(); track door.id) {
+                      <tr>
+                        <td>
+                          <div class="font-medium text-text">{{ door.hierarchicalName }}</div>
+                          <div class="text-xs text-text-muted">Perfil: {{ door.lockProfileName }}</div>
+                        </td>
+                        <td>
+                          <div class="flex gap-2">
+                            @if (door.dpsSupervised) {
+                              <app-status-badge tone="success">DPS</app-status-badge>
+                            }
+                            @if (door.rexSupervised) {
+                              <app-status-badge tone="success">REX</app-status-badge>
+                            }
+                          </div>
+                        </td>
+                        <td>
+                          <div class="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              class="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-text hover:bg-accent-hover"
+                              (click)="grantAccess(door)"
+                            >
+                              Abrir puerta
+                            </button>
+                            <button
+                              type="button"
+                              class="rounded-md border border-danger px-3 py-1.5 text-sm font-medium text-danger hover:bg-danger-bg"
+                              (click)="triggerForcedOpen(door)"
+                            >
+                              Simular forzada
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
           </section>
 
           <section class="rounded-lg border border-border bg-surface p-5 lg:col-span-2">

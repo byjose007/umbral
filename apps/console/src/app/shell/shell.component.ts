@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { ConfirmService } from '../shared/ui/confirm.service';
+import { ThemeService } from '../shared/ui/theme.service';
 import { NAV_GROUPS } from './nav-items';
 
 @Component({
@@ -54,7 +55,7 @@ import { NAV_GROUPS } from './nav-items';
       </aside>
 
       <div class="flex flex-1 flex-col overflow-hidden">
-        <header class="flex items-center justify-between border-b border-border bg-surface px-4 py-3 lg:px-6">
+        <header class="flex items-center justify-between border-b border-border bg-surface px-4 py-3 shadow-sm lg:px-6">
           <button
             type="button"
             class="text-text-muted hover:text-text lg:hidden"
@@ -64,8 +65,17 @@ import { NAV_GROUPS } from './nav-items';
             ☰
           </button>
           <div class="hidden lg:block"></div>
-          @if (authService.operator(); as operator) {
-            <div class="flex items-center gap-3 text-sm">
+          <div class="flex items-center gap-3 text-sm">
+            <button
+              type="button"
+              class="rounded-md border border-border px-2.5 py-1.5 text-text-muted hover:bg-surface-hover hover:text-text"
+              (click)="themeService.toggle()"
+              [attr.aria-label]="themeService.theme() === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'"
+              [title]="themeService.theme() === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'"
+            >
+              {{ themeService.theme() === 'light' ? '🌙' : '☀️' }}
+            </button>
+            @if (authService.operator(); as operator) {
               <div class="text-right">
                 <div class="text-text">{{ operator.fullName }}</div>
                 <div class="text-text-faint capitalize">{{ operator.role }}</div>
@@ -77,8 +87,8 @@ import { NAV_GROUPS } from './nav-items';
               >
                 Cerrar sesión
               </button>
-            </div>
-          }
+            }
+          </div>
         </header>
 
         <main class="flex-1 overflow-y-auto">
@@ -97,6 +107,7 @@ export class ShellComponent {
   });
 
   private readonly confirmService = inject(ConfirmService);
+  protected readonly themeService = inject(ThemeService);
 
   constructor(
     protected readonly authService: AuthService,
